@@ -4,9 +4,14 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
+    "dev": "run-p dev:*",
+    "dev:server": "bun --watch run src/server/index.tsx",
+    "dev:client": "bun build src/entry-client.tsx --outdir dist/public --watch",
+    "dev:css": "bunx tailwindcss -i src/index.css -o dist/public/styles.css --watch",
+    "build": "run-s build:client build:css",
+    "build:client": "bun build src/entry-client.tsx --outdir dist/public --minify",
+    "build:css": "bunx tailwindcss -i src/index.css -o dist/public/styles.css --minify",
+    "start": "NODE_ENV=production bun run src/server/index.tsx",
     "check": "run-s check:lint check:format check:types",
     "check:fix": "run-s check:lint:fix check:format:write check:types",
     "check:lint": "biome check .",
@@ -20,18 +25,15 @@
     "db:studio": "bunx --bun prisma studio"
   },
   "dependencies": {
+    "@elysiajs/static": "^1.4.7",
     "@prisma/client": "^7.3.0",
-    "@react-router/node": "^7.13.0",
-    "@react-router/serve": "^7.13.0",
-    "@vitejs/plugin-react": "^5.1.2",
+    "elysia": "^1.4.22",
     "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "react-router": "^7.13.0",
-    "vite": "^7.3.1"
+    "react-dom": "^19.2.4"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.13",
-    "@tailwindcss/vite": "^4.1.18",
+    "@tailwindcss/cli": "^4.1.18",
     "@types/bun": "latest",
     "@types/react": "^19.2.10",
     "@types/react-dom": "^19.2.3",
