@@ -8,11 +8,27 @@ Closely follow the vision outlined at `docs/VISION.md`. If you encounter decisio
 
 ### Worktrees
 
-Create Git worktrees as siblings to the main directory. Never check out worktrees to `main`. Delete worktrees after work has been completed.
+- Create Git worktrees as siblings to the main directory.
+- Never check out worktrees to `main`.
+- Delete worktrees after work has been completed.
+- After creating a new worktree, run `bun install` and `cp .env.example .env`.
 
 ### Pull requests
 
-Pull requests can be managed via the Gitea API. Documentation for the API can be found at `docs/GITEA-API.yaml`. Further information can be discovered in `.giteaconfig`.
+- Pull requests can be managed via the Gitea API.
+- Documentation for the API can be found at `docs/GITEA-API.yaml`.
+- Further information can be discovered in `.giteaconfig` on the `main` worktree.
+
+# Prefer Bun CLI & APIs
+
+When suggesting or generating commands in this codebase or terminal instructions:
+
+- Use `bun install` instead of `npm install`, `pnpm install`, or `yarn install`.
+- Use `bun run <script>` instead of `npm run <script>`, `pnpm run <script>`, or `yarn run <script>`.
+- Use `bunx <package> <command>` instead of `npx <package> <command>`.
+- Use `bunx --bun prisma` for any prisma commands.
+- Use Bun’s built-in runner (`bun <file>`) instead of `node <file>` or `ts-node <file>`.
+- For Vite commands, prefer invoking via `bunx --bun vite` (or equivalent) over a plain Node-based invocation.
 
 ## Beads
 
@@ -47,10 +63,3 @@ bd sync               # Sync with git
 5. **Clean up** - Clear stashes, prune remote branches
 6. **Verify** - All changes committed AND pushed
 7. **Hand off** - Provide context for next session
-
-**CRITICAL RULES:**
-
-- Work is NOT complete until `git push` succeeds
-- NEVER stop before pushing - that leaves work stranded locally
-- NEVER say "ready to push when you are" - YOU must push
-- If push fails, resolve and retry until it succeeds

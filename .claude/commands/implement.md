@@ -16,9 +16,9 @@ You are tasked with implementing a bead from the epic provided below, or with th
 - Implement exactly what the ticket specifies — no more, no less. Every requirement must be met, and no additional features should be added.
 - Your implementation should be a cohesive, individual unit of work.
 - The code should compile and run flawlessly after your changes even if your changes are a piece of a larger project.
-- Respect the reviewer's concerns.
 - If you have fundemental concerns or unresolved decisions to make regarding your implementation, return back to the user for additional guidance.
 - Implement ONE bead. Stop work after your PR has been created.
+- Do NOT touch the main branch. Your work should be scoped ONLY to the worktree you have created.
 
 ## PRs
 
