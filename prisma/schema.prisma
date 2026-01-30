@@ -24,6 +24,7 @@ model User {
 
   // OAuth accounts - supports multiple providers per user for account linking
   accounts Account[]
+  tasks    Task[]
 
   @@map("users")
 }
@@ -64,6 +65,7 @@ model Project {
 
   // Relations
   sections  Section[]
+  tasks     Task[]
 
   @@index([userId])
   @@map("projects")
@@ -81,8 +83,71 @@ model Section {
 
   // Relations
   project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks     Task[]
 
   @@index([projectId])
   @@index([projectId, position])
   @@map("sections")
+}
+
+// Priority levels for tasks
+enum Priority {
+  NONE
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+// Task status
+enum Status {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+// Task: Primary work items
+model Task {
+  id          String    @id @default(cuid())
+  title       String    @db.VarChar(500)
+  description String?   @db.Text
+  dueDate     DateTime?
+  priority    Priority  @default(NONE)
+  status      Status    @default(TODO)
+  position    Int       // For ordering tasks within a section or project
+  sectionId   String?
+  projectId   String
+  userId      String    // Owner of the task
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  section   Section?  @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+  subtasks  Subtask[]
+
+  @@index([userId])
+  @@index([projectId])
+  @@index([sectionId])
+  @@index([projectId, position])
+  @@index([userId, status])
+  @@index([userId, dueDate])
+  @@map("tasks")
+}
+
+// Subtask: Checklist-style items nested under a task (single level)
+model Subtask {
+  id        String   @id @default(cuid())
+  title     String   @db.VarChar(500)
+  completed Boolean  @default(false)
+  position  Int      // For ordering subtasks within a task
+  taskId    String
+
+  // Relations
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@index([taskId, position])
+  @@map("subtasks")
 }
