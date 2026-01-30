@@ -1,5 +1,19 @@
 # Instructions
 
+## Project
+
+Closely follow the vision outlined at `docs/VISION.md`. If you encounter decisions related to feature sets or business logic, report back the the user and ask for their preference.
+
+## Git
+
+### Worktrees
+
+Create Git worktrees as siblings to the main directory. Never check out worktrees to `main`. Delete worktrees after work has been completed.
+
+### Pull requests
+
+Create pull requests with the Gitea CLI `tea`. You should not have to deal with any login configuration. If you experience authentication issues, stop your work and report back. Further documentation can be found for `tea` by running `tea --help`.
+
 ## Beads
 
 This project uses **bd** (beads) for issue tracking. Run `bd onboard` to get started.
@@ -40,7 +54,3 @@ bd sync               # Sync with git
 - NEVER stop before pushing - that leaves work stranded locally
 - NEVER say "ready to push when you are" - YOU must push
 - If push fails, resolve and retry until it succeeds
-
-## Worktrees
-
-Create worktrees as siblings to the main directory. Never check out worktrees to `main`. Delete worktrees after work has been completed.
