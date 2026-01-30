@@ -12,7 +12,7 @@ Create Git worktrees as siblings to the main directory. Never check out worktree
 
 ### Pull requests
 
-Create pull requests with the Gitea CLI `tea`. You should not have to deal with any login configuration. If you experience authentication issues, stop your work and report back. Further documentation can be found for `tea` by running `tea --help`.
+Pull requests can be managed via the Gitea API. Documentation for the API can be found at `docs/GITEA-API.yaml`. Further information can be discovered in `.giteaconfig`.
 
 ## Beads
 
