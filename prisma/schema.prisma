@@ -12,3 +12,43 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+// User model for authentication and profile
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // OAuth accounts - supports multiple providers per user for account linking
+  accounts Account[]
+
+  @@map("users")
+}
+
+// OAuth account model - supports multiple providers per user
+model Account {
+  id                String   @id @default(cuid())
+  userId            String
+  provider          String   // e.g., "google", "github"
+  providerId        String   // Provider's user ID
+  providerAccountId String   // Alternative name for providerId (some OAuth libs use this)
+  accessToken       String?  @db.Text
+  refreshToken      String?  @db.Text
+  expiresAt         DateTime?
+  tokenType         String?
+  scope             String?
+  idToken           String?  @db.Text
+  sessionState      String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerId])
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("accounts")
+}
