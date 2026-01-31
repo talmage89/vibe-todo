@@ -33,9 +33,8 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 # Finder (MacOS) folder config
 .DS_Store
 
-/generated/prisma
+# Prisma generated code
+src/platform/db/generated
 
 # Gitea config with token
 .giteaconfig
-
-src/generated

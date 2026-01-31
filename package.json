@@ -5,13 +5,13 @@
   "private": true,
   "scripts": {
     "dev": "run-p dev:*",
-    "dev:server": "bun --watch run src/server/index.tsx",
-    "dev:client": "bun build src/entry-client.tsx --outdir dist/public --watch",
-    "dev:css": "bunx tailwindcss -i src/index.css -o dist/public/styles.css --watch",
+    "dev:server": "bun --watch run src/platform/server/entry-server.tsx",
+    "dev:client": "bun build src/platform/server/entry-client.tsx --outdir dist/public --watch",
+    "dev:css": "bunx --bun tailwindcss -i src/index.css -o dist/public/styles.css --watch",
     "build": "run-s build:client build:css",
-    "build:client": "bun build src/entry-client.tsx --outdir dist/public --minify",
-    "build:css": "bunx tailwindcss -i src/index.css -o dist/public/styles.css --minify",
-    "start": "NODE_ENV=production bun run src/server/index.tsx",
+    "build:client": "NODE_ENV=production bun build src/platform/server/entry-client.tsx --outdir dist/public --minify",
+    "build:css": "NODE_ENV=production bunx --bun tailwindcss -i src/index.css -o dist/public/styles.css --minify",
+    "start": "NODE_ENV=production bun run src/platform/server/entry-server.tsx",
     "check": "run-s check:lint check:format check:types",
     "check:fix": "run-s check:lint:fix check:format:write check:types",
     "check:lint": "biome check .",
@@ -20,16 +20,21 @@
     "check:format:write": "biome format --write .",
     "check:types": "tsc --noEmit",
     "db:generate": "bunx --bun prisma generate",
-    "db:migrate": "bunx --bun prisma migrate dev",
+    "db:migrate:dev": "bunx --bun prisma migrate dev",
+    "db:migrate:prod": "bunx --bun prisma migrate deploy",
     "db:push": "bunx --bun prisma db push",
     "db:studio": "bunx --bun prisma studio"
   },
   "dependencies": {
     "@elysiajs/static": "^1.4.7",
+    "@neondatabase/serverless": "^1.0.2",
+    "@prisma/adapter-neon": "^7.3.0",
     "@prisma/client": "^7.3.0",
     "elysia": "^1.4.22",
     "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "react-dom": "^19.2.4",
+    "ws": "^8.19.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.13",
@@ -37,6 +42,7 @@
     "@types/bun": "latest",
     "@types/react": "^19.2.10",
     "@types/react-dom": "^19.2.3",
+    "@types/ws": "^8.18.1",
     "npm-run-all": "^4.1.5",
     "prisma": "^7.3.0",
     "tailwindcss": "^4.1.18"
