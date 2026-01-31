@@ -25,11 +25,11 @@ const HTML = (children: React.ReactNode) => (
       <meta charSet="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <title>Todo App</title>
-      <link rel="stylesheet" href="public/styles.css" />
+      <link rel="stylesheet" href="/public/styles.css" />
     </head>
     <body>
       <div id="root">{children}</div>
-      <script type="module" src="public/entry-client.js"></script>
+      <script type="module" src="/public/entry-client.js"></script>
     </body>
   </html>
 );
