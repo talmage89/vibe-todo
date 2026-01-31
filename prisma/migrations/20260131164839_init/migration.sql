@@ -4,6 +4,9 @@ CREATE TYPE "TaskPriority" AS ENUM ('NONE', 'LOW', 'MEDIUM', 'HIGH', 'URGENT');
 -- CreateEnum
 CREATE TYPE "TaskStatus" AS ENUM ('TODO', 'IN_PROGRESS', 'DONE');
 
+-- CreateEnum
+CREATE TYPE "CollaborationRole" AS ENUM ('VIEWER', 'EDITOR', 'ADMIN');
+
 -- CreateTable
 CREATE TABLE "users" (
     "id" TEXT NOT NULL,
@@ -105,6 +108,32 @@ CREATE TABLE "tags" (
 );
 
 -- CreateTable
+CREATE TABLE "share_links" (
+    "id" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "token" TEXT NOT NULL,
+    "password" TEXT,
+    "expiresAt" TIMESTAMP(3),
+    "projectId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+
+    CONSTRAINT "share_links_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "collaborations" (
+    "id" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "role" "CollaborationRole" NOT NULL DEFAULT 'VIEWER',
+    "userId" TEXT NOT NULL,
+    "projectId" TEXT NOT NULL,
+
+    CONSTRAINT "collaborations_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "_TagToTask" (
     "A" TEXT NOT NULL,
     "B" TEXT NOT NULL,
@@ -158,7 +187,28 @@ CREATE INDEX "subtasks_taskId_position_idx" ON "subtasks"("taskId", "position");
 CREATE INDEX "tags_name_idx" ON "tags"("name");
 
 -- CreateIndex
+CREATE INDEX "tags_projectId_idx" ON "tags"("projectId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "tags_name_projectId_key" ON "tags"("name", "projectId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "share_links_token_key" ON "share_links"("token");
+
+-- CreateIndex
+CREATE INDEX "share_links_projectId_idx" ON "share_links"("projectId");
+
+-- CreateIndex
+CREATE INDEX "share_links_userId_idx" ON "share_links"("userId");
+
+-- CreateIndex
+CREATE INDEX "collaborations_userId_idx" ON "collaborations"("userId");
+
+-- CreateIndex
+CREATE INDEX "collaborations_projectId_idx" ON "collaborations"("projectId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "collaborations_userId_projectId_key" ON "collaborations"("userId", "projectId");
 
 -- CreateIndex
 CREATE INDEX "_TagToTask_B_index" ON "_TagToTask"("B");
@@ -186,6 +236,18 @@ ALTER TABLE "subtasks" ADD CONSTRAINT "subtasks_taskId_fkey" FOREIGN KEY ("taskI
 
 -- AddForeignKey
 ALTER TABLE "tags" ADD CONSTRAINT "tags_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "projects"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "share_links" ADD CONSTRAINT "share_links_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "projects"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "share_links" ADD CONSTRAINT "share_links_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "collaborations" ADD CONSTRAINT "collaborations_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "collaborations" ADD CONSTRAINT "collaborations_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "projects"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "_TagToTask" ADD CONSTRAINT "_TagToTask_A_fkey" FOREIGN KEY ("A") REFERENCES "tags"("id") ON DELETE CASCADE ON UPDATE CASCADE;

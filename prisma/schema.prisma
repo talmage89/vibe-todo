@@ -1,6 +1,6 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "./generated"
+  output   = "../src/generated"
 }
 
 datasource db {
@@ -16,9 +16,11 @@ model User {
   name   String?
   avatar String?
 
-  accounts Account[]
-  projects Project[]
-  tasks    Task[]
+  accounts       Account[]
+  projects       Project[]
+  collaborations Collaboration[]
+  shareLinks     ShareLink[]
+  tasks          Task[]
 
   @@map("users")
 }
@@ -57,9 +59,11 @@ model Project {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  sections Section[]
-  tasks    Task[]
-  tags     Tag[]
+  collaborations Collaboration[]
+  shareLinks     ShareLink[]
+  sections       Section[]
+  tasks          Task[]
+  tags           Tag[]
 
   @@index([userId])
   @@map("projects")
@@ -161,5 +165,49 @@ model Tag {
 
   @@unique([name, projectId])
   @@index([name])
+  @@index([projectId])
   @@map("tags")
+}
+
+model ShareLink {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  token     String    @unique
+  password  String?
+  expiresAt DateTime?
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([userId])
+  @@map("share_links")
+}
+
+enum CollaborationRole {
+  VIEWER
+  EDITOR
+  ADMIN
+}
+
+model Collaboration {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  role CollaborationRole @default(VIEWER)
+
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, projectId])
+  @@index([userId])
+  @@index([projectId])
+  @@map("collaborations")
 }
