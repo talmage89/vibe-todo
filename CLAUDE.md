@@ -6,11 +6,13 @@ Closely follow the vision outlined at `docs/VISION.md`. If you encounter decisio
 
 ## Git
 
+The Git remote is on a dedicated Gitea instance. There's a secondary `push` remote that is read-only.
+
 ### Worktrees
 
 - Create Git worktrees as siblings to the main directory.
 - Never check out worktrees to `main`.
-- Delete worktrees after work has been completed.
+- Delete worktrees after work has been completed. Ensure you clean up the worktree in Git state.
 - After creating a new worktree, run `bun install` and `cp .env.example .env`.
 
 ### Pull requests

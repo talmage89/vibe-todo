@@ -18,3 +18,4 @@ Last, delete your worktree and report back.
 
 - Do not modify the code. Do not make any commits or push to the remote.
 - Be critical. You are the sole filter for quality before code is merged.
+- You may close PRs if they are duplicates or no longer relevant.
