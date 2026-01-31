@@ -15,8 +15,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=build /app/dist ./dist
-COPY --from=build /app/public ./public
 
 EXPOSE 8080
 ENTRYPOINT ["bun"]
-CMD ["dist/index.js"]
+CMD ["dist/server/entry-server.js"]
