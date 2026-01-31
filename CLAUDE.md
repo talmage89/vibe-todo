@@ -11,6 +11,7 @@ The Git remote is on a dedicated Gitea instance. There's a secondary `push` remo
 ### Worktrees
 
 - Create Git worktrees as siblings to the main directory.
+- Your worktree name MUST be unique. If you have a bead you're working on, use the bead name as the worktree state. Otherwise, use some other unique identifier such as a timestamp for your worktree and branch name.
 - Never check out worktrees to `main`.
 - Delete worktrees after work has been completed. Ensure you clean up the worktree in Git state.
 - After creating a new worktree, run `bun install` and `cp .env.example .env`.
