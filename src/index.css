@@ -37,9 +37,9 @@
   /* 0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48, 56, 64 */
 }
 
-/* Dark mode overrides */
+/* Dark mode overrides - system preference */
 @media (prefers-color-scheme: dark) {
-  @theme {
+  :root {
     --color-background: #0f0f0f;
     --color-surface: #1a1a1a;
     --color-border: #2d2d2d;
@@ -47,7 +47,6 @@
     --color-text-secondary: #9ca3af;
     --color-accent: #60a5fa;
 
-    /* Priority Colors - Dark Mode */
     --color-priority-urgent: #ef4444;
     --color-priority-high: #fb923c;
     --color-priority-medium: #facc15;
