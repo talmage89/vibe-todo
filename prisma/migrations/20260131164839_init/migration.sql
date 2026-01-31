@@ -15,7 +15,6 @@ CREATE TABLE "users" (
     "email" TEXT NOT NULL,
     "name" TEXT,
     "avatar" TEXT,
-
     CONSTRAINT "users_pkey" PRIMARY KEY ("id")
 );
 
@@ -34,7 +33,6 @@ CREATE TABLE "accounts" (
     "idToken" TEXT,
     "sessionState" TEXT,
     "userId" TEXT NOT NULL,
-
     CONSTRAINT "accounts_pkey" PRIMARY KEY ("id")
 );
 
@@ -46,7 +44,6 @@ CREATE TABLE "projects" (
     "name" TEXT NOT NULL,
     "color" TEXT,
     "userId" TEXT NOT NULL,
-
     CONSTRAINT "projects_pkey" PRIMARY KEY ("id")
 );
 
@@ -58,7 +55,6 @@ CREATE TABLE "sections" (
     "name" TEXT NOT NULL,
     "position" INTEGER NOT NULL,
     "projectId" TEXT NOT NULL,
-
     CONSTRAINT "sections_pkey" PRIMARY KEY ("id")
 );
 
@@ -77,7 +73,6 @@ CREATE TABLE "tasks" (
     "userId" TEXT NOT NULL,
     "projectId" TEXT NOT NULL,
     "sectionId" TEXT,
-
     CONSTRAINT "tasks_pkey" PRIMARY KEY ("id")
 );
 
@@ -91,7 +86,6 @@ CREATE TABLE "subtasks" (
     "position" INTEGER NOT NULL,
     "isTemplate" BOOLEAN NOT NULL DEFAULT false,
     "taskId" TEXT NOT NULL,
-
     CONSTRAINT "subtasks_pkey" PRIMARY KEY ("id")
 );
 
@@ -103,7 +97,6 @@ CREATE TABLE "tags" (
     "name" TEXT NOT NULL,
     "color" TEXT NOT NULL,
     "projectId" TEXT NOT NULL,
-
     CONSTRAINT "tags_pkey" PRIMARY KEY ("id")
 );
 
@@ -117,7 +110,6 @@ CREATE TABLE "share_links" (
     "expiresAt" TIMESTAMP(3),
     "projectId" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
-
     CONSTRAINT "share_links_pkey" PRIMARY KEY ("id")
 );
 
@@ -129,7 +121,6 @@ CREATE TABLE "collaborations" (
     "role" "CollaborationRole" NOT NULL DEFAULT 'VIEWER',
     "userId" TEXT NOT NULL,
     "projectId" TEXT NOT NULL,
-
     CONSTRAINT "collaborations_pkey" PRIMARY KEY ("id")
 );
 
@@ -137,8 +128,7 @@ CREATE TABLE "collaborations" (
 CREATE TABLE "_TagToTask" (
     "A" TEXT NOT NULL,
     "B" TEXT NOT NULL,
-
-    CONSTRAINT "_TagToTask_AB_pkey" PRIMARY KEY ("A","B")
+    CONSTRAINT "_TagToTask_AB_pkey" PRIMARY KEY ("A", "B")
 );
 
 -- CreateIndex
@@ -214,43 +204,58 @@ CREATE UNIQUE INDEX "collaborations_userId_projectId_key" ON "collaborations"("u
 CREATE INDEX "_TagToTask_B_index" ON "_TagToTask"("B");
 
 -- AddForeignKey
-ALTER TABLE "accounts" ADD CONSTRAINT "accounts_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "accounts"
+ADD CONSTRAINT "accounts_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "projects" ADD CONSTRAINT "projects_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "projects"
+ADD CONSTRAINT "projects_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "sections" ADD CONSTRAINT "sections_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "projects"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "sections"
+ADD CONSTRAINT "sections_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "projects"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "tasks" ADD CONSTRAINT "tasks_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "tasks"
+ADD CONSTRAINT "tasks_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "tasks" ADD CONSTRAINT "tasks_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "projects"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "tasks"
+ADD CONSTRAINT "tasks_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "projects"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "tasks" ADD CONSTRAINT "tasks_sectionId_fkey" FOREIGN KEY ("sectionId") REFERENCES "sections"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "tasks"
+ADD CONSTRAINT "tasks_sectionId_fkey" FOREIGN KEY ("sectionId") REFERENCES "sections"("id") ON DELETE
+SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "subtasks" ADD CONSTRAINT "subtasks_taskId_fkey" FOREIGN KEY ("taskId") REFERENCES "tasks"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "subtasks"
+ADD CONSTRAINT "subtasks_taskId_fkey" FOREIGN KEY ("taskId") REFERENCES "tasks"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "tags" ADD CONSTRAINT "tags_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "projects"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "tags"
+ADD CONSTRAINT "tags_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "projects"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "share_links" ADD CONSTRAINT "share_links_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "projects"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "share_links"
+ADD CONSTRAINT "share_links_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "projects"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "share_links" ADD CONSTRAINT "share_links_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "share_links"
+ADD CONSTRAINT "share_links_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "collaborations" ADD CONSTRAINT "collaborations_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "collaborations"
+ADD CONSTRAINT "collaborations_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "collaborations" ADD CONSTRAINT "collaborations_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "projects"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "collaborations"
+ADD CONSTRAINT "collaborations_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "projects"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "_TagToTask" ADD CONSTRAINT "_TagToTask_A_fkey" FOREIGN KEY ("A") REFERENCES "tags"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "_TagToTask"
+ADD CONSTRAINT "_TagToTask_A_fkey" FOREIGN KEY ("A") REFERENCES "tags"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "_TagToTask" ADD CONSTRAINT "_TagToTask_B_fkey" FOREIGN KEY ("B") REFERENCES "tasks"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "_TagToTask"
+ADD CONSTRAINT "_TagToTask_B_fkey" FOREIGN KEY ("B") REFERENCES "tasks"("id") ON DELETE CASCADE ON UPDATE CASCADE;

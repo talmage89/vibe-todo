@@ -1,8 +1,5 @@
 import { env } from "~/platform/utils/env";
 
-/**
- * OAuth provider configuration
- */
 export interface OAuthProvider {
   clientId: string;
   clientSecret: string;
@@ -13,9 +10,6 @@ export interface OAuthProvider {
   scopes: string[];
 }
 
-/**
- * Get Google OAuth configuration
- */
 export const getGoogleConfig = (): OAuthProvider => {
   const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI } = env();
 
@@ -30,9 +24,6 @@ export const getGoogleConfig = (): OAuthProvider => {
   };
 };
 
-/**
- * Get GitHub OAuth configuration
- */
 export const getGithubConfig = (): OAuthProvider => {
   const { GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, GITHUB_REDIRECT_URI } = env();
 
@@ -47,9 +38,6 @@ export const getGithubConfig = (): OAuthProvider => {
   };
 };
 
-/**
- * Session configuration
- */
 export const getSessionConfig = () => {
   const { SESSION_SECRET } = env();
 
