@@ -11,10 +11,10 @@ The Git remote is on a dedicated Gitea instance. There's a secondary `push` remo
 ### Worktrees
 
 - Create Git worktrees as siblings to the main directory.
+- After creating a new worktree, run the `./cmd/sync-worktree.sh` script to automaticlly put your worktree in a proper workable state.
 - Your worktree name MUST be unique. If you have a bead you're working on, use the bead name as the worktree state. Otherwise, use some other unique identifier such as a timestamp for your worktree and branch name.
 - Never check out worktrees to `main`.
 - Delete worktrees after work has been completed. Ensure you clean up the worktree in Git state.
-- After creating a new worktree, run `bun install` and `cp .env.example .env`.
 
 ### Pull requests
 
@@ -22,7 +22,13 @@ The Git remote is on a dedicated Gitea instance. There's a secondary `push` remo
 - Documentation for the API can be found at `docs/GITEA-API.yaml`.
 - Further information can be discovered in `.giteaconfig` on the `main` worktree.
 
-# Prefer Bun CLI & APIs
+## Code style
+
+- Use `bun run check` and `bun run check:fix` to help your code comply with linting, formatting, and type errors.
+- Don't concern yourself with any problems related to the `.beads` directory if you're working in a worktree.
+- NEVER use css variables, and avoid using `style={{}}` at all costs. Prefer short, generic Tailwind classnames if at all possible.
+
+## Prefer Bun CLI & APIs
 
 When suggesting or generating commands in this codebase or terminal instructions:
 
