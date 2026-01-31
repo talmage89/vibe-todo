@@ -3,7 +3,7 @@
 ## Project
 
 Closely follow the vision outlined at `docs/VISION.md`. If you encounter decisions related to feature sets or business logic, report back the the user and ask for their preference.
-You MUST use absolute paths for all operations. Do not use relative paths in your bash commands.
+You MUST use absolute paths for all operations. Do not use relative paths in your bash commands. The directory of the `main` worktree is `todo/todo`.
 
 ## Git
 
@@ -11,7 +11,7 @@ The Git remote is on a dedicated Gitea instance. There's a secondary `push` remo
 
 ### Worktrees
 
-- Create Git worktrees as siblings to the main directory.
+- Create Git worktrees as siblings to the main directory. You must create the worktree from within the `main` worktree, `todo/todo`
 - After creating a new worktree, run the `./cmd/sync-worktree.sh` script to automaticlly put your worktree in a proper workable state.
 - Your worktree name MUST be unique. If you have a bead you're working on, use the bead name as the worktree state. Otherwise, use some other unique identifier such as a timestamp for your worktree and branch name.
 - Never check out worktrees to `main`.

@@ -7,9 +7,7 @@ You are tasked with implementing a bead from the epic provided below, or with th
 1. Select a bead, updating its status where necessary.
 2. Create a new worktree and branch for your ticket and `cd` into this directory.
 3. Carry out your implementation to completion.
-4. Spin up a reviewer subagent. Prompt them to review the implementation objectively and critically, comparing the implementation against the requirements of the bead.
-5. After reviwed, address any flaws, bugs, or changes that the reviewer has raised.
-6. Push to the remote. Create a PR for your branch and delete your worktree.
+4. Push to the remote. Create a PR for your branch and delete your worktree.
 
 ## Guidelines
 
