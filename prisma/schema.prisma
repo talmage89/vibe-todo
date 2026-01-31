@@ -27,19 +27,24 @@ model User {
   @@map("users")
 }
 
+enum AccountProvider {
+  GOOGLE
+  GITHUB
+}
+
 model Account {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  provider     String
+  provider     AccountProvider
   providerId   String
-  accessToken  String?   @db.Text
-  refreshToken String?   @db.Text
+  accessToken  String?         @db.Text
+  refreshToken String?         @db.Text
   expiresAt    DateTime?
   tokenType    String?
   scope        String?
-  idToken      String?   @db.Text
+  idToken      String?         @db.Text
   sessionState String?
 
   userId String

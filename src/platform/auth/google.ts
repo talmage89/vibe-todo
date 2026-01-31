@@ -1,10 +1,10 @@
-import type { Elysia } from "elysia";
-import { db } from "~/platform/db";
-import { getGoogleConfig } from "./config";
+import { type Elysia, type Handler, redirect } from "elysia";
+import z from "zod";
+import { AccountProvider } from "../db/generated";
+import { getGoogleConfig, type OAuthProvider } from "./config";
+import { createSessionCookie } from "./session";
+import { type UpsertAccountData, type UpsertUserData, upsertAccount } from "./user";
 
-/**
- * Google OAuth user info response
- */
 interface GoogleUserInfo {
   id: string;
   email: string;
@@ -15,9 +15,6 @@ interface GoogleUserInfo {
   picture: string;
 }
 
-/**
- * Google OAuth token response
- */
 interface GoogleTokenResponse {
   access_token: string;
   expires_in: number;
@@ -27,184 +24,131 @@ interface GoogleTokenResponse {
   id_token?: string;
 }
 
-/**
- * Register Google OAuth routes
- */
 export const registerGoogleOAuth = (app: Elysia) => {
   const config = getGoogleConfig();
+  app.get("/auth/google", getGoogleOAuthRedirectHandler(config));
+  app.get("/auth/google/callback", getGoogleOAuthCallbackHandler(config));
+  return app;
+};
 
-  // Redirect to Google OAuth
-  app.get("/auth/google", ({ set }) => {
-    const params = new URLSearchParams({
-      client_id: config.clientId,
-      redirect_uri: config.redirectUri,
-      response_type: "code",
-      scope: config.scopes.join(" "),
-      access_type: "offline",
-      prompt: "consent",
-    });
+const getGoogleOAuthRedirectHandler = (config: OAuthProvider): Handler => {
+  return () => {
+    const url = buildGoogleOAuthUrl(config);
+    return redirect(url);
+  };
+};
 
-    const url = `${config.authorizationUrl}?${params.toString()}`;
-    set.redirect = url;
+const buildGoogleOAuthUrl = (config: OAuthProvider) => {
+  const params = new URLSearchParams({
+    client_id: config.clientId,
+    redirect_uri: config.redirectUri,
+    response_type: "code",
+    scope: config.scopes.join(" "),
+    access_type: "offline",
+    prompt: "consent",
   });
 
-  // Handle Google OAuth callback
-  app.get("/auth/google/callback", async ({ query, cookie, set }) => {
-    const { code, error } = query as { code?: string; error?: string };
+  const url = new URL(config.authorizationUrl);
+  url.search = params.toString();
 
-    if (error || !code) {
+  return url.toString();
+};
+
+const getGoogleOAuthCallbackHandler = (config: OAuthProvider): Handler => {
+  return async ({ query, cookie, set }) => {
+    const { success, data, error: zodError } = querySchema.safeParse(query);
+    if (!success) {
       set.status = 400;
-      return { error: "Authorization failed", details: error };
+      return { error: "Authorization failed", details: zodError.message };
     }
 
     try {
-      // Exchange code for tokens
-      const tokenResponse = await fetch(config.tokenUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({
-          code,
-          client_id: config.clientId,
-          client_secret: config.clientSecret,
-          redirect_uri: config.redirectUri,
-          grant_type: "authorization_code",
-        }),
-      });
-
-      if (!tokenResponse.ok) {
-        const errorData = await tokenResponse.json();
-        set.status = 500;
-        return { error: "Failed to exchange code for tokens", details: errorData };
-      }
-
-      const tokens: GoogleTokenResponse = await tokenResponse.json();
-
-      // Fetch user profile
-      const userInfoResponse = await fetch(config.userInfoUrl, {
-        headers: {
-          Authorization: `Bearer ${tokens.access_token}`,
-        },
-      });
-
-      if (!userInfoResponse.ok) {
-        set.status = 500;
-        return { error: "Failed to fetch user info" };
-      }
-
-      const userInfo: GoogleUserInfo = await userInfoResponse.json();
-
-      // Create or update user and account
-      const expiresAt = new Date(Date.now() + tokens.expires_in * 1000);
-
-      // Check if account already exists
-      const existingAccount = await db.account.findUnique({
-        where: {
-          provider_providerId: {
-            provider: "google",
-            providerId: userInfo.id,
-          },
-        },
-        include: {
-          user: true,
-        },
-      });
-
-      let userId: string;
-
-      if (existingAccount) {
-        // Update existing account tokens
-        await db.account.update({
-          where: { id: existingAccount.id },
-          data: {
-            accessToken: tokens.access_token,
-            refreshToken: tokens.refresh_token,
-            expiresAt,
-            idToken: tokens.id_token,
-            scope: tokens.scope,
-            tokenType: tokens.token_type,
-          },
-        });
-
-        userId = existingAccount.userId;
-      } else {
-        // Check if user exists with same email (for account linking)
-        const existingUser = await db.user.findUnique({
-          where: { email: userInfo.email },
-        });
-
-        if (existingUser) {
-          // Link new account to existing user
-          await db.account.create({
-            data: {
-              provider: "google",
-              providerId: userInfo.id,
-              accessToken: tokens.access_token,
-              refreshToken: tokens.refresh_token,
-              expiresAt,
-              idToken: tokens.id_token,
-              scope: tokens.scope,
-              tokenType: tokens.token_type,
-              userId: existingUser.id,
-            },
-          });
-
-          // Update user info if not set
-          await db.user.update({
-            where: { id: existingUser.id },
-            data: {
-              name: existingUser.name || userInfo.name,
-              avatar: existingUser.avatar || userInfo.picture,
-            },
-          });
-
-          userId = existingUser.id;
-        } else {
-          // Create new user and account
-          const newUser = await db.user.create({
-            data: {
-              email: userInfo.email,
-              name: userInfo.name,
-              avatar: userInfo.picture,
-              accounts: {
-                create: {
-                  provider: "google",
-                  providerId: userInfo.id,
-                  accessToken: tokens.access_token,
-                  refreshToken: tokens.refresh_token,
-                  expiresAt,
-                  idToken: tokens.id_token,
-                  scope: tokens.scope,
-                  tokenType: tokens.token_type,
-                },
-              },
-            },
-          });
-
-          userId = newUser.id;
-        }
-      }
-
-      // Set session cookie
-      cookie.session?.set({
-        value: userId,
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        maxAge: 30 * 24 * 60 * 60, // 30 days
-        path: "/",
-      });
-
-      // Redirect to app
-      set.redirect = "/";
-      return { success: true };
+      const userId = await authenticateGoogleOAuth(config, data.code);
+      const sessionCookie = createSessionCookie(userId);
+      cookie.session?.set(sessionCookie);
+      return redirect("/");
     } catch (err) {
       console.error("OAuth error:", err);
       set.status = 500;
       return { error: "Internal server error" };
     }
+  };
+};
+
+const querySchema = z.object({
+  code: z.string(),
+  error: z.never().optional(),
+});
+
+type GoogleOAuthData = {
+  tokens: GoogleTokenResponse;
+  userInfo: GoogleUserInfo;
+};
+
+const authenticateGoogleOAuth = async (config: OAuthProvider, code: string): Promise<string> => {
+  const { tokens, userInfo } = await getGoogleOAuthData(config, code);
+
+  const accountData: UpsertAccountData = {
+    provider: AccountProvider.GOOGLE,
+    providerId: userInfo.id,
+    accessToken: tokens.access_token,
+    refreshToken: tokens.refresh_token,
+    expiresAt: new Date(Date.now() + tokens.expires_in * 1000),
+  };
+
+  const userData: UpsertUserData = {
+    email: userInfo.email,
+    name: userInfo.name,
+    avatar: userInfo.picture,
+  };
+
+  const { userId } = await upsertAccount(accountData, userData);
+  return userId;
+};
+
+const getGoogleOAuthData = async (
+  config: OAuthProvider,
+  code: string,
+): Promise<GoogleOAuthData> => {
+  const tokens = await fetchGoogleToken(config, code);
+  const userInfo = await fetchGoogleUserInfo(config.userInfoUrl, tokens.access_token);
+  return { tokens, userInfo };
+};
+
+const fetchGoogleToken = async (
+  config: OAuthProvider,
+  code: string,
+): Promise<GoogleTokenResponse> => {
+  const body = new URLSearchParams({
+    code,
+    client_id: config.clientId,
+    client_secret: config.clientSecret,
+    redirect_uri: config.redirectUri,
+    grant_type: "authorization_code",
   });
 
-  return app;
+  const tokenResponse = await fetch(config.tokenUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body,
+  });
+
+  if (!tokenResponse.ok) {
+    const errorData = await tokenResponse.json();
+    throw new Error(`Failed to exchange code for tokens: ${errorData}`);
+  }
+
+  return await tokenResponse.json();
+};
+
+const fetchGoogleUserInfo = async (userInfoUrl: string, token: string): Promise<GoogleUserInfo> => {
+  const userInfoResponse = await fetch(userInfoUrl, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!userInfoResponse.ok) {
+    throw new Error(`Failed to fetch user info: ${userInfoResponse.statusText}`);
+  }
+
+  return await userInfoResponse.json();
 };
