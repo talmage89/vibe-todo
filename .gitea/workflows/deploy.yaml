@@ -16,7 +16,7 @@ jobs:
         run: |
           curl -fsSL https://bun.com/install | bash
           ~/.bun/bin/bun install
-          ~/.bun/bin/bun run db:generate
+          ~/.bun/bin/bun x --bun prisma generate
 
       - name: Authenticate to GCloud
         env:
