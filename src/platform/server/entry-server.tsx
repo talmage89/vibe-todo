@@ -9,14 +9,8 @@ const { PORT: port } = env();
 
 const app = new Elysia();
 
-app.use(
-  staticPlugin({
-    assets: "dist/public",
-    prefix: "public",
-  }),
-);
+app.use(staticPlugin({ assets: "dist/public", prefix: "public" }));
 
-// Register OAuth routes
 registerGoogleOAuth(app);
 registerGithubOAuth(app);
 
@@ -26,6 +20,12 @@ const HTML = (children: React.ReactNode) => (
       <meta charSet="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <title>Todo App</title>
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      />
       <link rel="stylesheet" href="/public/styles.css" />
     </head>
     <body>
