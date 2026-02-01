@@ -11,6 +11,12 @@ jobs:
     steps:
       - name: Checkout
         uses: https://git.talmage.dev/system/actions-checkout@v1
+      
+      - name: Set up project
+        run: |
+          curl -fsSL https://bun.com/install | bash
+          ~/.bun/bin/bun install
+          ~/.bun/bin/bun run db:generate
 
       - name: Authenticate to GCloud
         env:
@@ -43,7 +49,6 @@ jobs:
         env: 
           DB_URL: ${{ secrets.DB_URL }}
         run: |
-          curl -fsSL https://bun.com/install | bash
           ~/.bun/bin/bun x --bun prisma migrate deploy
 
       # - name: Redeploy Cloud Run service
