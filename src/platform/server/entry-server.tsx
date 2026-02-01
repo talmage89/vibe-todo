@@ -2,7 +2,7 @@ import { staticPlugin } from "@elysiajs/static";
 import { Elysia } from "elysia";
 import { renderToString } from "react-dom/server";
 import { App } from "~/app";
-import { registerGoogleOAuth } from "~/platform/auth";
+import { registerGoogleOAuth, registerLogout } from "~/platform/auth";
 import { env } from "~/platform/utils/env";
 
 const { PORT: port } = env();
@@ -16,8 +16,9 @@ app.use(
   }),
 );
 
-// Register OAuth routes
+// Register auth routes
 registerGoogleOAuth(app);
+registerLogout(app);
 
 const HTML = (children: React.ReactNode) => (
   <html lang="en">

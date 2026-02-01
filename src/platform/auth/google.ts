@@ -2,7 +2,7 @@ import { type Elysia, type Handler, redirect } from "elysia";
 import z from "zod";
 import { AccountProvider } from "../db/generated";
 import { getGoogleConfig, type OAuthProvider } from "./config";
-import { createSessionCookie } from "./session";
+import { createSession } from "./session";
 import { type UpsertAccountData, type UpsertUserData, upsertAccount } from "./user";
 
 interface GoogleUserInfo {
@@ -55,7 +55,8 @@ const buildGoogleOAuthUrl = (config: OAuthProvider) => {
 };
 
 const getGoogleOAuthCallbackHandler = (config: OAuthProvider): Handler => {
-  return async ({ query, cookie, set }) => {
+  return async (context) => {
+    const { query, cookie, set, request } = context;
     const { success, data, error: zodError } = querySchema.safeParse(query);
     if (!success) {
       set.status = 400;
@@ -64,7 +65,13 @@ const getGoogleOAuthCallbackHandler = (config: OAuthProvider): Handler => {
 
     try {
       const userId = await authenticateGoogleOAuth(config, data.code);
-      const sessionCookie = createSessionCookie(userId);
+
+      // Create session with user agent and IP address for security tracking
+      const userAgent = request.headers.get("user-agent") ?? undefined;
+      const ipAddress =
+        request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip") ?? undefined;
+
+      const sessionCookie = await createSession(userId, { userAgent, ipAddress });
       cookie.session?.set(sessionCookie);
       return redirect("/");
     } catch (err) {

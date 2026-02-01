@@ -64,7 +64,7 @@ const upsertUserSelect = {
   name: true,
 } satisfies Prisma.UserSelect;
 
-const upsertUser = async (userData: UpsertUserData): Promise<User> => {
+export const upsertUser = async (userData: UpsertUserData): Promise<User> => {
   const existingUser = await db.user.findUnique({
     where: { email: userData.email },
     select: upsertUserSelect,
