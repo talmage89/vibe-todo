@@ -53,21 +53,21 @@ jobs:
         run: |
           ~/.bun/bin/bun x --bun prisma migrate deploy
 
-      # - name: Redeploy Cloud Run service
-      #   env:
-      #     DOCKER_REGISTRY_DOMAIN: ${{ secrets.DOCKER_REGISTRY_DOMAIN }}
-      #     DOCKER_REGISTRY_PATH: ${{ secrets.DOCKER_REGISTRY_PATH }}
-      #     DOCKER_IMAGE_NAME: ${{ secrets.DOCKER_IMAGE_NAME }}
-      #     GCLOUD_PROJECT_ID: ${{ secrets.GCLOUD_PROJECT_ID }}
-      #     CLOUD_RUN_REGION: ${{ secrets.CLOUD_RUN_REGION }}
-      #     CLOUD_RUN_SERVICE: ${{ secrets.CLOUD_RUN_SERVICE }}
-      #   run: |
-      #     IMAGE_REF="${DOCKER_REGISTRY_DOMAIN}/${DOCKER_REGISTRY_PATH}/${DOCKER_IMAGE_NAME}"
-      #     gcloud run deploy "$CLOUD_RUN_SERVICE" \
-      #       --image "${IMAGE_REF}:latest" \
-      #       --region "$CLOUD_RUN_REGION" \
-      #       --project "$GCLOUD_PROJECT_ID" \
-      #       --quiet
+      - name: Redeploy Cloud Run service
+        env:
+          DOCKER_REGISTRY_DOMAIN: ${{ secrets.DOCKER_REGISTRY_DOMAIN }}
+          DOCKER_REGISTRY_PATH: ${{ secrets.DOCKER_REGISTRY_PATH }}
+          DOCKER_IMAGE_NAME: ${{ secrets.DOCKER_IMAGE_NAME }}
+          GCLOUD_PROJECT_ID: ${{ secrets.GCLOUD_PROJECT_ID }}
+          CLOUD_RUN_REGION: ${{ secrets.CLOUD_RUN_REGION }}
+          CLOUD_RUN_SERVICE: ${{ secrets.CLOUD_RUN_SERVICE }}
+        run: |
+          IMAGE_REF="${DOCKER_REGISTRY_DOMAIN}/${DOCKER_REGISTRY_PATH}/${DOCKER_IMAGE_NAME}"
+          gcloud run deploy "$CLOUD_RUN_SERVICE" \
+            --image "${IMAGE_REF}:latest" \
+            --region "$CLOUD_RUN_REGION" \
+            --project "$GCLOUD_PROJECT_ID" \
+            --quiet
 
       - name: Cleanup gcloud service account key
         run: |
