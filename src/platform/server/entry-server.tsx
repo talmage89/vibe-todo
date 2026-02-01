@@ -2,6 +2,7 @@ import { staticPlugin } from "@elysiajs/static";
 import { Elysia } from "elysia";
 import { renderToString } from "react-dom/server";
 import { App } from "~/app";
+import { registerApiRoutes } from "~/platform/api";
 import { registerGoogleOAuth } from "~/platform/auth";
 import { env } from "~/platform/utils/env";
 
@@ -18,6 +19,9 @@ app.use(
 
 // Register OAuth routes
 registerGoogleOAuth(app);
+
+// Register protected API routes
+registerApiRoutes(app);
 
 const HTML = (children: React.ReactNode) => (
   <html lang="en">

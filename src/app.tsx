@@ -1,5 +1,6 @@
-import { Tmp } from "~/features/tmp";
+import { RouterProvider } from "@tanstack/react-router";
+import { router } from "~/platform/router";
 
 export const App = () => {
-  return <Tmp />;
+  return <RouterProvider router={router} />;
 };
