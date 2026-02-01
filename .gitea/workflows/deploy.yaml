@@ -1,0 +1,67 @@
+name: deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-push:
+    runs-on: linux_amd64_gcloud
+    steps:
+      - name: Checkout
+        uses: https://git.talmage.dev/system/actions-checkout@v1
+
+      - name: Authenticate to GCloud
+        env:
+          GCLOUD_SERVICE_ACCOUNT_KEY: ${{ secrets.GCLOUD_SERVICE_ACCOUNT_KEY }}
+        run: |
+          echo "$GCLOUD_SERVICE_ACCOUNT_KEY" > /tmp/gcloud-key.json
+          gcloud auth activate-service-account --key-file=/tmp/gcloud-key.json
+
+      - name: Configure Docker for Artifact Registry
+        env:
+          DOCKER_REGISTRY_DOMAIN: ${{ secrets.DOCKER_REGISTRY_DOMAIN }}
+        run: |
+          gcloud auth configure-docker "$DOCKER_REGISTRY_DOMAIN" --quiet
+
+      - name: Calculate short SHA
+        run: echo "SHA_SHORT=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
+
+      - name: Build and push image
+        env:
+          DOCKER_REGISTRY_DOMAIN: ${{ secrets.DOCKER_REGISTRY_DOMAIN }}
+          DOCKER_REGISTRY_PATH: ${{ secrets.DOCKER_REGISTRY_PATH }}
+          DOCKER_IMAGE_NAME: ${{ secrets.DOCKER_IMAGE_NAME }}
+        run: |
+          IMAGE_REF="${DOCKER_REGISTRY_DOMAIN}/${DOCKER_REGISTRY_PATH}/${DOCKER_IMAGE_NAME}"
+          docker build -t "${IMAGE_REF}:sha-${SHA_SHORT}" -t "${IMAGE_REF}:latest" .
+          docker push "${IMAGE_REF}:sha-${SHA_SHORT}"
+          docker push "${IMAGE_REF}:latest"
+
+      - name: Run Prisma migrations
+        env: 
+          DB_URL: ${{ secrets.DB_URL }}
+        run: |
+          curl -fsSL https://bun.com/install | bash
+          ~/.bun/bin/bun x --bun prisma migrate deploy
+
+      # - name: Redeploy Cloud Run service
+      #   env:
+      #     DOCKER_REGISTRY_DOMAIN: ${{ secrets.DOCKER_REGISTRY_DOMAIN }}
+      #     DOCKER_REGISTRY_PATH: ${{ secrets.DOCKER_REGISTRY_PATH }}
+      #     DOCKER_IMAGE_NAME: ${{ secrets.DOCKER_IMAGE_NAME }}
+      #     GCLOUD_PROJECT_ID: ${{ secrets.GCLOUD_PROJECT_ID }}
+      #     CLOUD_RUN_REGION: ${{ secrets.CLOUD_RUN_REGION }}
+      #     CLOUD_RUN_SERVICE: ${{ secrets.CLOUD_RUN_SERVICE }}
+      #   run: |
+      #     IMAGE_REF="${DOCKER_REGISTRY_DOMAIN}/${DOCKER_REGISTRY_PATH}/${DOCKER_IMAGE_NAME}"
+      #     gcloud run deploy "$CLOUD_RUN_SERVICE" \
+      #       --image "${IMAGE_REF}:latest" \
+      #       --region "$CLOUD_RUN_REGION" \
+      #       --project "$GCLOUD_PROJECT_ID" \
+      #       --quiet
+
+      - name: Cleanup gcloud service account key
+        run: |
+          rm -f /tmp/gcloud-key.json
