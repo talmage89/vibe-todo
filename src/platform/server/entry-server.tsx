@@ -1,5 +1,6 @@
 import { staticPlugin } from "@elysiajs/static";
 import { Elysia } from "elysia";
+import logixlysia from "logixlysia";
 import { renderToString } from "react-dom/server";
 import { App } from "~/app";
 import { registerGithubOAuth, registerGoogleOAuth } from "~/platform/auth";
@@ -9,6 +10,7 @@ const { PORT: port } = env();
 
 const app = new Elysia();
 
+app.use(logixlysia({ config: { showStartupMessage: false, useColors: false } }));
 app.use(staticPlugin({ assets: "dist/public", prefix: "public" }));
 
 registerGoogleOAuth(app);
