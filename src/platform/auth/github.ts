@@ -1,7 +1,12 @@
 import { type Elysia, type Handler, redirect } from "elysia";
-import z from "zod";
-import { AccountProvider } from "../db/generated";
+import { AccountProvider } from "~/platform/db/generated";
+import { env } from "~/platform/utils/env";
 import { getGithubConfig, type OAuthProvider } from "./config";
+import { signJson, verifySignedJson } from "./crypto";
+import { fetchJsonOrThrow } from "./http";
+import { parseOAuthCallbackQuery } from "./oauth-callback";
+import { clearOAuthEphemeralCookie, createOAuthEphemeralCookie } from "./oauth-cookie";
+import { createOAuthStateAndPkce } from "./oauth-flow";
 import { createSessionCookie } from "./session";
 import { type UpsertAccountData, type UpsertUserData, upsertAccount } from "./user";
 
@@ -26,6 +31,11 @@ interface GithubTokenResponse {
   scope: string;
 }
 
+const githubOAuthCookieName = "oauth_github";
+const githubOAuthCookiePath = "/auth/github/callback";
+const githubOAuthCookieMaxAgeSeconds = 10 * 60;
+const githubApiVersion = "2022-11-28";
+
 export const registerGithubOAuth = (app: Elysia) => {
   const config = getGithubConfig();
   app.get("/auth/github", getGithubOAuthRedirectHandler(config));
@@ -34,17 +44,34 @@ export const registerGithubOAuth = (app: Elysia) => {
 };
 
 const getGithubOAuthRedirectHandler = (config: OAuthProvider): Handler => {
-  return () => {
-    const url = buildGithubOAuthUrl(config);
+  return ({ cookie }) => {
+    const { SESSION_SECRET } = env();
+    const { state, codeVerifier, codeChallenge } = createOAuthStateAndPkce();
+
+    cookie[githubOAuthCookieName]?.set(
+      createOAuthEphemeralCookie({
+        value: signJson({ state, codeVerifier }, SESSION_SECRET),
+        maxAgeSeconds: githubOAuthCookieMaxAgeSeconds,
+        path: githubOAuthCookiePath,
+      }),
+    );
+
+    const url = buildGithubOAuthUrl(config, { state, codeChallenge });
     return redirect(url);
   };
 };
 
-const buildGithubOAuthUrl = (config: OAuthProvider) => {
+const buildGithubOAuthUrl = (
+  config: OAuthProvider,
+  oauth: { state: string; codeChallenge: string },
+) => {
   const params = new URLSearchParams({
     client_id: config.clientId,
     redirect_uri: config.redirectUri,
     scope: config.scopes.join(" "),
+    state: oauth.state,
+    code_challenge: oauth.codeChallenge,
+    code_challenge_method: "S256",
   });
 
   const url = new URL(config.authorizationUrl);
@@ -55,14 +82,37 @@ const buildGithubOAuthUrl = (config: OAuthProvider) => {
 
 const getGithubOAuthCallbackHandler = (config: OAuthProvider): Handler => {
   return async ({ query, cookie, set }) => {
-    const { success, data, error: zodError } = querySchema.safeParse(query);
-    if (!success) {
-      set.status = 400;
-      return { error: "Authorization failed", details: zodError.message };
+    const parsed = parseOAuthCallbackQuery(query);
+    if (!parsed.ok) {
+      set.status = parsed.status;
+      return parsed.body;
     }
 
     try {
-      const userId = await authenticateGithubOAuth(config, data.code);
+      const { SESSION_SECRET } = env();
+      const signedCookieValue = cookie[githubOAuthCookieName]?.value as string | undefined;
+      const cookieData = verifySignedJson(
+        signedCookieValue,
+        SESSION_SECRET,
+        isGithubOAuthCookiePayload,
+      );
+
+      if (!cookieData) {
+        set.status = 400;
+        return { error: "Authorization failed", details: "Missing OAuth state" };
+      }
+
+      if (cookieData.state !== parsed.state) {
+        set.status = 400;
+        return { error: "Authorization failed", details: "Invalid OAuth state" };
+      }
+
+      // Clear single-use OAuth cookie regardless of outcome.
+      cookie[githubOAuthCookieName]?.set(
+        clearOAuthEphemeralCookie({ path: githubOAuthCookiePath }),
+      );
+
+      const userId = await authenticateGithubOAuth(config, parsed.code, cookieData.codeVerifier);
       const sessionCookie = createSessionCookie(userId);
       cookie.session?.set(sessionCookie);
       return redirect("/");
@@ -74,19 +124,18 @@ const getGithubOAuthCallbackHandler = (config: OAuthProvider): Handler => {
   };
 };
 
-const querySchema = z.object({
-  code: z.string(),
-  error: z.never().optional(),
-});
-
 type GithubOAuthData = {
   tokens: GithubTokenResponse;
   userInfo: GithubUserInfo;
   email: string;
 };
 
-const authenticateGithubOAuth = async (config: OAuthProvider, code: string): Promise<string> => {
-  const { tokens, userInfo, email } = await getGithubOAuthData(config, code);
+const authenticateGithubOAuth = async (
+  config: OAuthProvider,
+  code: string,
+  codeVerifier: string,
+): Promise<string> => {
+  const { tokens, userInfo, email } = await getGithubOAuthData(config, code, codeVerifier);
 
   const accountData: UpsertAccountData = {
     provider: AccountProvider.GITHUB,
@@ -109,73 +158,86 @@ const authenticateGithubOAuth = async (config: OAuthProvider, code: string): Pro
 const getGithubOAuthData = async (
   config: OAuthProvider,
   code: string,
+  codeVerifier: string,
 ): Promise<GithubOAuthData> => {
-  const tokens = await fetchGithubToken(config, code);
+  const tokens = await fetchGithubToken(config, code, codeVerifier);
   const userInfo = await fetchGithubUserInfo(config.userInfoUrl, tokens.access_token);
-  const email = await getGithubUserEmail(tokens.access_token, userInfo.email);
+  const email = await getGithubUserEmail(tokens.access_token, userInfo.email, tokens.scope);
   return { tokens, userInfo, email };
 };
 
 const fetchGithubToken = async (
   config: OAuthProvider,
   code: string,
+  codeVerifier: string,
 ): Promise<GithubTokenResponse> => {
   const body = new URLSearchParams({
     code,
     client_id: config.clientId,
     client_secret: config.clientSecret,
     redirect_uri: config.redirectUri,
+    code_verifier: codeVerifier,
   });
 
-  const tokenResponse = await fetch(config.tokenUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      Accept: "application/json",
+  return await fetchJsonOrThrow<GithubTokenResponse>(
+    config.tokenUrl,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Accept: "application/json",
+      },
+      body,
     },
-    body,
-  });
-
-  if (!tokenResponse.ok) {
-    const errorData = await tokenResponse.json();
-    throw new Error(`Failed to exchange code for tokens: ${errorData}`);
-  }
-
-  return await tokenResponse.json();
+    "Failed to exchange code for tokens",
+  );
 };
 
 const fetchGithubUserInfo = async (userInfoUrl: string, token: string): Promise<GithubUserInfo> => {
-  const userInfoResponse = await fetch(userInfoUrl, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: "application/json",
+  return await fetchJsonOrThrow<GithubUserInfo>(
+    userInfoUrl,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/vnd.github+json",
+        "X-GitHub-Api-Version": githubApiVersion,
+        "User-Agent": "todo",
+      },
     },
-  });
-
-  if (!userInfoResponse.ok) {
-    throw new Error(`Failed to fetch user info: ${userInfoResponse.statusText}`);
-  }
-
-  return await userInfoResponse.json();
+    "Failed to fetch user info",
+  );
 };
 
-const getGithubUserEmail = async (token: string, profileEmail: string | null): Promise<string> => {
+const getGithubUserEmail = async (
+  token: string,
+  profileEmail: string | null,
+  grantedScopes: string,
+): Promise<string> => {
   if (profileEmail) {
     return profileEmail;
   }
 
-  const emailsResponse = await fetch("https://api.github.com/user/emails", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: "application/json",
-    },
-  });
-
-  if (!emailsResponse.ok) {
-    throw new Error(`Failed to fetch user emails: ${emailsResponse.statusText}`);
+  const scopes = grantedScopes
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const hasUserEmailScope = scopes.includes("user:email") || scopes.includes("user");
+  if (!hasUserEmailScope) {
+    throw new Error("Missing required GitHub scope: user:email");
   }
 
-  const emails: GithubEmail[] = await emailsResponse.json();
+  const emails = await fetchJsonOrThrow<GithubEmail[]>(
+    "https://api.github.com/user/emails",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/vnd.github+json",
+        "X-GitHub-Api-Version": githubApiVersion,
+        "User-Agent": "todo",
+      },
+    },
+    "Failed to fetch user emails",
+  );
   const primaryEmail = emails.find((e) => e.primary && e.verified);
 
   if (!primaryEmail) {
@@ -183,4 +245,15 @@ const getGithubUserEmail = async (token: string, profileEmail: string | null): P
   }
 
   return primaryEmail.email;
+};
+
+type GithubOAuthCookiePayload = {
+  state: string;
+  codeVerifier: string;
+};
+
+const isGithubOAuthCookiePayload = (value: unknown): value is GithubOAuthCookiePayload => {
+  if (!value || typeof value !== "object") return false;
+  const v = value as Partial<GithubOAuthCookiePayload>;
+  return typeof v.state === "string" && typeof v.codeVerifier === "string";
 };
