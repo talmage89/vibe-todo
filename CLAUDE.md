@@ -18,7 +18,7 @@ The Git remote is on a dedicated Gitea instance. There's a secondary `push` remo
 
 - Pull requests can be managed via the Gitea API.
 - Documentation for the API can be found at `docs/GITEA-API.yaml`.
-- Further information can be discovered in `.giteaconfig` on the `main` worktree.
+- Further information can be discovered in `.giteaconfig` on the `main` worktree (`../todo/.giteaconfig`).
 
 ## Code style
 
