@@ -5,16 +5,15 @@ You are tasked with fixing PRs that have been marked as incomplete by a reviewer
 ## Workflow
 
 1. Query for any active PRs with the label `incomplete`.
-2. Create a worktree for your local changes.
-3. For each incomplete PR:
-   1. Check out the PR's branch in your worktree.
+2. For each incomplete PR:
+   1. Check out the PR's branch in your current worktree.
    2. Read the reviewer's comments to understand what needs to be fixed.
    3. Identify the corresponding bead for context on the original requirements.
    4. Address all issues raised by the reviewer.
    5. Push your changes to the PR branch.
    6. Update the PR's label from `incomplete` to `pending`.
-4. Before finishing, requery for `incomplete` PRs. If any remain, restart the flow.
-5. Delete your worktree and report back.
+3. Before finishing, requery for `incomplete` PRs. If any remain, restart the flow.
+4. Report back with a summary of fixes applied.
 
 ## Guidelines
 

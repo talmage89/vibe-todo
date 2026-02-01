@@ -11,11 +11,9 @@ The Git remote is on a dedicated Gitea instance. There's a secondary `push` remo
 
 ### Worktrees
 
-- Create Git worktrees as siblings to the main directory. You must create the worktree from within the `main` worktree, `todo/todo`
-- After creating a new worktree, run the `./cmd/sync-worktree.sh` script to automaticlly put your worktree in a proper workable state.
-- Your worktree name MUST be unique. If you have a bead you're working on, use the bead name as the worktree state. Otherwise, use some other unique identifier such as a timestamp for your worktree and branch name.
-- Never check out worktrees to `main`.
-- Delete worktrees after work has been completed. Ensure you clean up the worktree in Git state.
+- You will begin each session in a dedicated, permanent worktree slot. This worktree is already set up and ready for use.
+- You do not need to create or delete worktrees — your worktree slot is persistent and dedicated to your instance.
+- Never check out your worktree to `main`. Work exclusively within your assigned worktree.
 
 ### Pull requests
 
