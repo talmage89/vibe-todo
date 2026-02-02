@@ -3,6 +3,7 @@ import { Elysia } from "elysia";
 import logixlysia from "logixlysia";
 import { renderToString } from "react-dom/server";
 import { App } from "~/app";
+import { registerApiRoutes } from "~/platform/api";
 import { registerGithubOAuth, registerGoogleOAuth } from "~/platform/auth";
 import { env } from "~/platform/utils/env";
 
@@ -15,6 +16,9 @@ app.use(staticPlugin({ assets: "dist/public", prefix: "public" }));
 
 registerGoogleOAuth(app);
 registerGithubOAuth(app);
+
+// Register protected API routes
+registerApiRoutes(app);
 
 const HTML = (children: React.ReactNode) => (
   <html lang="en">
