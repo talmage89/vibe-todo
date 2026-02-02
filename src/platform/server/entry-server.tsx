@@ -6,6 +6,7 @@ import { App } from "~/app";
 import { registerApiRoutes } from "~/platform/api/routes";
 import { registerGithubOAuth } from "~/platform/auth/github";
 import { registerGoogleOAuth } from "~/platform/auth/google";
+import { createAppRouter } from "~/platform/router/router";
 import { env } from "~/platform/utils/env";
 
 const { PORT: port } = env();
@@ -42,8 +43,12 @@ const HTML = (children: React.ReactNode) => (
   </html>
 );
 
-app.get("*", ({ path: _path }) => {
-  const html = renderToString(HTML(<App />));
+app.get("*", async ({ request }) => {
+  const url = new URL(request.url);
+  const router = createAppRouter(`${url.pathname}${url.search}`);
+  await router.load();
+
+  const html = renderToString(HTML(<App router={router} />));
   return new Response(`<!DOCTYPE html>${html}`, { headers: { "Content-Type": "text/html" } });
 });
 

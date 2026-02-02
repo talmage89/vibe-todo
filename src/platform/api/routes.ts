@@ -1,6 +1,6 @@
 import type { Elysia } from "elysia";
 import { authMiddleware, requireAuth } from "~/platform/auth/middleware";
-import type { User } from "~/platform/db/generated";
+import { ApiError } from "../auth/errors";
 
 /**
  * Registers protected API routes.
@@ -10,9 +10,18 @@ export const registerApiRoutes = (app: Elysia) => {
   app.group("/api", (api) =>
     api
       .use(authMiddleware)
-      .get("/me", (context) => {
-        // Type assertion needed because Elysia's derive() doesn't properly extend context types
-        const user = (context as typeof context & { user?: User }).user;
+      .error({ ApiError })
+      .onError(({ error, set }) => {
+        if (error instanceof ApiError) {
+          set.status = error.status;
+          return { success: false, error: error.message };
+        }
+
+        console.error("API Error:", error);
+        set.status = 500;
+        return { success: false, error: "Internal server error" };
+      })
+      .get("/me", ({ user }) => {
         const authenticatedUser = requireAuth(user);
         return {
           success: true,
@@ -24,18 +33,6 @@ export const registerApiRoutes = (app: Elysia) => {
             createdAt: authenticatedUser.createdAt,
           },
         };
-      })
-      .onError(({ error, set }) => {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-
-        if (errorMessage.includes("Unauthorized")) {
-          set.status = 401;
-          return { success: false, error: errorMessage };
-        }
-
-        console.error("API Error:", error);
-        set.status = 500;
-        return { success: false, error: "Internal server error" };
       }),
   );
 

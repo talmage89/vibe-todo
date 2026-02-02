@@ -1,3 +1,4 @@
+import { useNavigate } from "@tanstack/react-router";
 import { type ReactNode, useEffect } from "react";
 import { useAuth } from "./use-auth";
 
@@ -23,13 +24,13 @@ interface ProtectedRouteProps {
  */
 export const ProtectedRoute = ({ children, redirectTo = "/login" }: ProtectedRouteProps) => {
   const { user, loading } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!loading && !user) {
-      // User is not authenticated, redirect to login
-      window.location.hash = redirectTo;
+      void navigate({ to: redirectTo });
     }
-  }, [user, loading, redirectTo]);
+  }, [user, loading, redirectTo, navigate]);
 
   // Show loading state while checking authentication
   if (loading) {
