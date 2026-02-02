@@ -3,8 +3,9 @@ import { Elysia } from "elysia";
 import logixlysia from "logixlysia";
 import { renderToString } from "react-dom/server";
 import { App } from "~/app";
-import { registerApiRoutes } from "~/platform/api";
-import { registerGithubOAuth, registerGoogleOAuth } from "~/platform/auth";
+import { registerApiRoutes } from "~/platform/api/routes";
+import { registerGithubOAuth } from "~/platform/auth/github";
+import { registerGoogleOAuth } from "~/platform/auth/google";
 import { env } from "~/platform/utils/env";
 
 const { PORT: port } = env();
