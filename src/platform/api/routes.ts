@@ -11,7 +11,9 @@ export const registerApiRoutes = (app: Elysia) => {
     api
       .use(authMiddleware)
       .get("/me", (context) => {
-        const authenticatedUser = requireAuth((context as { user?: User }).user);
+        // Type assertion needed because Elysia's derive() doesn't properly extend context types
+        const user = (context as typeof context & { user?: User }).user;
+        const authenticatedUser = requireAuth(user);
         return {
           success: true,
           user: {
