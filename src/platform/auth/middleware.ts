@@ -1,6 +1,7 @@
 import { Elysia } from "elysia";
 import { db } from "../db";
 import type { User } from "../db/generated";
+import { AuthenticationError } from "./errors";
 import { getSessionUserId } from "./session";
 
 /**
@@ -14,20 +15,23 @@ export interface AuthContext extends Record<string, unknown> {
  * Auth middleware plugin that validates session cookies and attaches user to context.
  * Does not block requests - use requireAuth() in handlers to enforce authentication.
  */
-export const authMiddleware = new Elysia({ name: "auth-middleware" }).derive(async ({ cookie }) => {
-  const sessionValue = cookie.session?.value as string | undefined;
-  const userId = getSessionUserId(sessionValue);
+export const authMiddleware = new Elysia({ name: "auth-middleware" }).derive(
+  { as: "global" },
+  async ({ cookie }) => {
+    const sessionValue = cookie.session?.value as string | undefined;
+    const userId = getSessionUserId(sessionValue);
 
-  if (!userId) {
-    return {};
-  }
+    if (!userId) {
+      return { user: undefined };
+    }
 
-  const user = await db.user.findUnique({
-    where: { id: userId },
-  });
+    const user = await db.user.findUnique({
+      where: { id: userId },
+    });
 
-  return { user: user ?? undefined };
-});
+    return { user: user ?? undefined };
+  },
+);
 
 /**
  * Type guard and helper to enforce authentication in route handlers.
@@ -43,7 +47,7 @@ export const authMiddleware = new Elysia({ name: "auth-middleware" }).derive(asy
  */
 export const requireAuth = (user: User | undefined): User => {
   if (!user) {
-    throw new Error("Unauthorized: Authentication required");
+    throw new AuthenticationError("Unauthorized: Authentication required");
   }
   return user;
 };
