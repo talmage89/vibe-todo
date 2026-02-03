@@ -56,3 +56,18 @@ const isSessionPayload = (value: unknown): value is SessionPayload => {
     typeof v.n === "string"
   );
 };
+
+/**
+ * Creates a cookie configuration that clears the session.
+ * Sets the cookie value to empty and maxAge to 0 for immediate expiry.
+ */
+export const clearSessionCookie = (): ElysiaCookie => {
+  return {
+    value: "",
+    httpOnly: true,
+    sameSite: "strict",
+    path: "/",
+    secure: process.env.NODE_ENV !== "development",
+    maxAge: 0,
+  };
+};
