@@ -1,5 +1,12 @@
 {
   "permissions": {
+    "allow": [
+      "Bash(bun *)",
+      "Bash(bunx *)",
+      "Bash(git *)",
+      "Bash(bd *)",
+      "Bash(curl *)"
+    ],
     "deny": ["Read(./.env)", "Read(./.env.*)"]
   }
 }
