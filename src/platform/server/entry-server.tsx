@@ -6,6 +6,7 @@ import { App } from "~/app";
 import { registerApiRoutes } from "~/platform/api/routes";
 import { registerGithubOAuth } from "~/platform/auth/github";
 import { registerGoogleOAuth } from "~/platform/auth/google";
+import { registerLogout } from "~/platform/auth/logout";
 import { createAppRouter } from "~/platform/router/router";
 import { env } from "~/platform/utils/env";
 
@@ -18,6 +19,7 @@ app.use(staticPlugin({ assets: "dist/public", prefix: "public" }));
 
 registerGoogleOAuth(app);
 registerGithubOAuth(app);
+registerLogout(app);
 
 // Register protected API routes
 registerApiRoutes(app);

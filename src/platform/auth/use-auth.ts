@@ -9,6 +9,7 @@ interface AuthState {
 
 interface UseAuthReturn extends AuthState {
   refetch: () => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 /**
@@ -51,6 +52,19 @@ export const useAuth = (): UseAuthReturn => {
     }
   }, []);
 
+  const logout = useCallback(async () => {
+    try {
+      const response = await fetch("/auth/logout", { method: "POST" });
+      if (!response.ok) {
+        throw new Error(`Logout failed: ${response.statusText}`);
+      }
+      setState({ user: null, loading: false, error: null });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Logout failed";
+      setState((prev) => ({ ...prev, error: errorMessage }));
+    }
+  }, []);
+
   useEffect(() => {
     fetchUser();
   }, [fetchUser]);
@@ -58,5 +72,6 @@ export const useAuth = (): UseAuthReturn => {
   return {
     ...state,
     refetch: fetchUser,
+    logout,
   };
 };

@@ -2,7 +2,7 @@ import { Elysia } from "elysia";
 import { db } from "../db";
 import type { User } from "../db/generated";
 import { AuthenticationError } from "./errors";
-import { getSessionUserId } from "./session";
+import { SESSION_COOKIE_NAME, validateSession } from "./session";
 
 /**
  * Extended context type with optional user from auth middleware.
@@ -18,8 +18,8 @@ export interface AuthContext extends Record<string, unknown> {
 export const authMiddleware = new Elysia({ name: "auth-middleware" }).derive(
   { as: "global" },
   async ({ cookie }) => {
-    const sessionValue = cookie.session?.value as string | undefined;
-    const userId = getSessionUserId(sessionValue);
+    const sessionToken = cookie[SESSION_COOKIE_NAME]?.value as string | undefined;
+    const userId = await validateSession(sessionToken);
 
     if (!userId) {
       return { user: undefined };

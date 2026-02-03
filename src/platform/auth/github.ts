@@ -7,7 +7,7 @@ import { fetchJsonOrThrow } from "./http";
 import { parseOAuthCallbackQuery } from "./oauth-callback";
 import { clearOAuthEphemeralCookie, createOAuthEphemeralCookie } from "./oauth-cookie";
 import { createOAuthStateAndPkce } from "./oauth-flow";
-import { createSessionCookie } from "./session";
+import { createSession, SESSION_COOKIE_NAME } from "./session";
 import { type UpsertAccountData, type UpsertUserData, upsertAccount } from "./user";
 
 interface GithubUserInfo {
@@ -81,7 +81,7 @@ const buildGithubOAuthUrl = (
 };
 
 const getGithubOAuthCallbackHandler = (config: OAuthProvider): Handler => {
-  return async ({ query, cookie, set }) => {
+  return async ({ query, cookie, set, request }) => {
     const parsed = parseOAuthCallbackQuery(query);
     if (!parsed.ok) {
       set.status = parsed.status;
@@ -113,8 +113,10 @@ const getGithubOAuthCallbackHandler = (config: OAuthProvider): Handler => {
       );
 
       const userId = await authenticateGithubOAuth(config, parsed.code, cookieData.codeVerifier);
-      const sessionCookie = createSessionCookie(userId);
-      cookie.session?.set(sessionCookie);
+
+      const userAgent = request.headers.get("user-agent") ?? undefined;
+      const sessionCookie = await createSession(userId, { userAgent });
+      cookie[SESSION_COOKIE_NAME]?.set(sessionCookie);
       return redirect("/");
     } catch (err) {
       console.error("OAuth error:", err);
