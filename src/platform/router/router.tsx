@@ -6,6 +6,7 @@ import {
   Outlet,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+import { AppLayout } from "~/components/layout/app-layout";
 import { Login } from "~/features/auth/login";
 import { Tmp } from "~/features/tmp";
 import { ProtectedRoute } from "~/platform/auth/protected-route";
@@ -30,7 +31,9 @@ const IndexRoute = createRoute({
   path: "/",
   component: () => (
     <ProtectedRoute>
-      <Tmp />
+      <AppLayout>
+        <Tmp />
+      </AppLayout>
     </ProtectedRoute>
   ),
 });
