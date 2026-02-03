@@ -19,6 +19,7 @@ model User {
   avatar String?
 
   accounts       Account[]
+  sessions       Session[]
   projects       Project[]
   collaborations Collaboration[]
   shareLinks     ShareLink[]
@@ -53,6 +54,23 @@ model Account {
   @@unique([provider, providerId])
   @@index([userId])
   @@map("accounts")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  token     String   @unique
+  expiresAt DateTime
+  userAgent String?
+  ipAddress String?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
 }
 
 model Project {

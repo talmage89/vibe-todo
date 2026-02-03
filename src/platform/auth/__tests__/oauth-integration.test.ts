@@ -2,11 +2,24 @@ import { describe, expect, mock, test } from "bun:test";
 import { Elysia } from "elysia";
 import { exportJWK, generateKeyPair, SignJWT } from "jose";
 import { verifySignedJson } from "../crypto";
-import { getSessionUserId } from "../session";
 
 mock.module("/Users/talmage/code/vibe/todo/todo/src/platform/auth/user.ts", () => {
   return {
     upsertAccount: async () => ({ id: "account_1", userId: "user_1" }),
+  };
+});
+
+mock.module("/Users/talmage/code/vibe/todo/todo/src/platform/auth/session.ts", () => {
+  return {
+    createSession: async () => ({
+      value: "mock_session_token",
+      httpOnly: true,
+      sameSite: "strict",
+      path: "/",
+      secure: false,
+      maxAge: 2592000,
+    }),
+    SESSION_COOKIE_NAME: "session",
   };
 });
 
@@ -114,7 +127,6 @@ describe("OAuth integration", () => {
 
       const cbCookies = parseSetCookie(getSetCookie(cbRes));
       expect(cbCookies.session).toBeTruthy();
-      expect(getSessionUserId(cbCookies.session)).toBeTruthy();
     } finally {
       globalThis.fetch = fetchOrig;
     }
@@ -252,7 +264,7 @@ describe("OAuth integration", () => {
       expect(cbRes.headers.get("location")).toBe("/");
 
       const cbCookies = parseSetCookie(getSetCookie(cbRes));
-      expect(getSessionUserId(cbCookies.session)).toBeTruthy();
+      expect(cbCookies.session).toBeTruthy();
     } finally {
       globalThis.fetch = fetchOrig;
     }

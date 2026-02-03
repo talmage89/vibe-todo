@@ -1,65 +1,81 @@
+import { randomBytes } from "node:crypto";
 import type { ElysiaCookie } from "elysia/cookies";
-import { env } from "~/platform/utils/env";
+import { db } from "~/platform/db";
 import { Time, toSeconds } from "~/platform/utils/time";
-import { signJson, verifySignedJson } from "./crypto";
-import { createNonce } from "./oauth-flow";
 
-export const createSessionCookie = (userId: string): ElysiaCookie => {
-  const secure = process.env.NODE_ENV !== "development";
-  const maxAge = toSeconds(Time.ONE_MONTH);
-  const { SESSION_SECRET } = env();
+const SESSION_COOKIE_NAME = "session";
+const SESSION_MAX_AGE = Time.ONE_MONTH;
 
-  const issuedAt = Math.floor(Date.now() / 1000);
-  const expiresAt = issuedAt + maxAge;
-  const sessionNonce = createNonce();
+/**
+ * Creates a new database-backed session and returns the cookie configuration.
+ */
+export const createSession = async (
+  userId: string,
+  options?: { userAgent?: string; ipAddress?: string },
+): Promise<ElysiaCookie> => {
+  const token = generateSessionToken();
+  const maxAgeSeconds = toSeconds(SESSION_MAX_AGE);
+  const expiresAt = new Date(Date.now() + SESSION_MAX_AGE);
+
+  await db.session.create({
+    data: {
+      token,
+      userId,
+      expiresAt,
+      userAgent: options?.userAgent,
+      ipAddress: options?.ipAddress,
+    },
+  });
 
   return {
-    value: signSessionPayload(
-      { userId, iat: issuedAt, exp: expiresAt, n: sessionNonce },
-      SESSION_SECRET,
-    ),
+    value: token,
     httpOnly: true,
     sameSite: "strict",
     path: "/",
-    secure,
-    maxAge,
+    secure: process.env.NODE_ENV !== "development",
+    maxAge: maxAgeSeconds,
   };
 };
 
-type SessionPayload = {
-  userId: string;
-  iat: number;
-  exp: number;
-  n: string;
+/**
+ * Validates a session token and returns the userId if valid.
+ * Returns null if the session is invalid or expired.
+ */
+export const validateSession = async (token: string | undefined): Promise<string | null> => {
+  if (!token) return null;
+
+  const session = await db.session.findUnique({
+    where: { token },
+    select: { userId: true, expiresAt: true },
+  });
+
+  if (!session) return null;
+  if (session.expiresAt < new Date()) {
+    // Clean up expired session
+    await db.session.delete({ where: { token } }).catch(() => {});
+    return null;
+  }
+
+  return session.userId;
 };
 
-export const getSessionUserId = (value: string | undefined): string | null => {
-  if (!value) return null;
-  const { SESSION_SECRET } = env();
-  const payload = verifySignedJson(value, SESSION_SECRET, isSessionPayload);
-  if (!payload) return null;
-  if (payload.exp < Math.floor(Date.now() / 1000)) return null;
-  return payload.userId;
+/**
+ * Deletes a session by token (logout).
+ */
+export const deleteSession = async (token: string | undefined): Promise<void> => {
+  if (!token) return;
+  await db.session.delete({ where: { token } }).catch(() => {});
 };
 
-const signSessionPayload = (payload: SessionPayload, secret: string) => {
-  return signJson(payload, secret);
-};
-
-const isSessionPayload = (value: unknown): value is SessionPayload => {
-  if (!value || typeof value !== "object") return false;
-  const v = value as Partial<SessionPayload>;
-  return (
-    typeof v.userId === "string" &&
-    typeof v.iat === "number" &&
-    typeof v.exp === "number" &&
-    typeof v.n === "string"
-  );
+/**
+ * Deletes all sessions for a user (logout from all devices).
+ */
+export const deleteAllUserSessions = async (userId: string): Promise<void> => {
+  await db.session.deleteMany({ where: { userId } });
 };
 
 /**
  * Creates a cookie configuration that clears the session.
- * Sets the cookie value to empty and maxAge to 0 for immediate expiry.
  */
 export const clearSessionCookie = (): ElysiaCookie => {
   return {
@@ -71,3 +87,12 @@ export const clearSessionCookie = (): ElysiaCookie => {
     maxAge: 0,
   };
 };
+
+/**
+ * Generates a cryptographically secure session token.
+ */
+const generateSessionToken = (): string => {
+  return randomBytes(32).toString("base64url");
+};
+
+export { SESSION_COOKIE_NAME };
