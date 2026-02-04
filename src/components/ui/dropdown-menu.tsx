@@ -16,7 +16,7 @@ const DropdownMenuContent = forwardRef<
       ref={ref}
       sideOffset={sideOffset}
       className={cn(
-        "z-50 min-w-[8rem] overflow-hidden rounded-md border border-border bg-background py-1 shadow-sm",
+        "z-50 min-w-32 overflow-hidden rounded-md border border-border bg-background py-1 shadow-sm",
         "data-[state=closed]:animate-out data-[state=open]:animate-in",
         "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
         "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
@@ -41,7 +41,7 @@ const DropdownMenuItem = forwardRef<
     className={cn(
       "relative flex cursor-pointer select-none items-center gap-2 px-3 py-2 text-primary text-sm outline-none transition-colors",
       "focus:bg-surface focus:text-primary",
-      "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      "data-disabled:pointer-events-none data-disabled:opacity-50",
       inset && "pl-8",
       className,
     )}
