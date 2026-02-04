@@ -24,12 +24,17 @@ registerLogout(app);
 // Register protected API routes
 registerApiRoutes(app);
 
+// Inline script to prevent flash of wrong theme (runs before CSS loads)
+const themeScript = `(function(){try{var t=localStorage.getItem('theme');var s=t==='system'||!t?window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light':t;document.documentElement.classList.add(s)}catch(e){}})();`;
+
 const HTML = (children: React.ReactNode) => (
   <html lang="en">
     <head>
       <meta charSet="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <title>Todo App</title>
+      {/* biome-ignore lint/security/noDangerouslySetInnerHtml: Static theme script prevents flash of wrong theme */}
+      <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
       <link

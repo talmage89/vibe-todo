@@ -3,7 +3,10 @@ import {
   Bars3Icon,
   ChevronDownIcon,
   Cog6ToothIcon,
+  ComputerDesktopIcon,
   MagnifyingGlassIcon,
+  MoonIcon,
+  SunIcon,
 } from "@heroicons/react/24/outline";
 import { Button } from "~/components/ui/button";
 import {
@@ -11,10 +14,13 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import { useAuth } from "~/platform/auth/use-auth";
+import { type Theme, useTheme } from "~/platform/theme/use-theme";
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -22,6 +28,7 @@ interface HeaderProps {
 
 export const Header = ({ onMenuClick }: HeaderProps) => {
   const { user, logout } = useAuth();
+  const { theme, setTheme } = useTheme();
 
   const handleLogout = async () => {
     await logout();
@@ -78,6 +85,26 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
             </span>
             <span className="truncate font-normal text-secondary text-xs">{user?.email}</span>
           </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+
+          {/* Theme selection */}
+          <DropdownMenuLabel className="px-3 py-1.5 font-medium text-secondary text-xs">
+            Theme
+          </DropdownMenuLabel>
+          <DropdownMenuRadioGroup value={theme} onValueChange={(value) => setTheme(value as Theme)}>
+            <DropdownMenuRadioItem value="light">
+              <SunIcon className="h-4 w-4 text-secondary" />
+              Light
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="dark">
+              <MoonIcon className="h-4 w-4 text-secondary" />
+              Dark
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="system">
+              <ComputerDesktopIcon className="h-4 w-4 text-secondary" />
+              System
+            </DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
           <DropdownMenuSeparator />
 
           {/* Menu items */}
