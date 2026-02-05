@@ -9,6 +9,10 @@ export interface Section {
   updatedAt: string;
 }
 
+interface SectionResponse {
+  section: Section;
+}
+
 export function useSections(projectId: string) {
   const [sections, setSections] = useState<Section[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,41 +43,41 @@ export function useSections(projectId: string) {
   }, [fetchSections]);
 
   const createSection = useCallback(
-    async (name: string) => {
+    async (name: string): Promise<Section> => {
       const response = await fetch(`/api/projects/${projectId}/sections`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name }),
       });
 
-      const data = await response.json();
+      const data: SectionResponse = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to create section");
+        throw new Error("Failed to create section");
       }
 
       setSections((prev) => [...prev, data.section]);
-      return data.section as Section;
+      return data.section;
     },
     [projectId],
   );
 
   const updateSection = useCallback(
-    async (sectionId: string, name: string) => {
+    async (sectionId: string, name: string): Promise<Section> => {
       const response = await fetch(`/api/projects/${projectId}/sections/${sectionId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name }),
       });
 
-      const data = await response.json();
+      const data: SectionResponse = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to update section");
+        throw new Error("Failed to update section");
       }
 
       setSections((prev) => prev.map((s) => (s.id === sectionId ? data.section : s)));
-      return data.section as Section;
+      return data.section;
     },
     [projectId],
   );

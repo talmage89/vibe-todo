@@ -20,7 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import { useAuth } from "~/platform/auth/use-auth";
-import { type Theme, useTheme } from "~/platform/theme/use-theme";
+import { isTheme, useTheme } from "~/platform/theme/use-theme";
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -91,7 +91,10 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
           <DropdownMenuLabel className="px-3 py-1.5 font-medium text-secondary text-xs">
             Theme
           </DropdownMenuLabel>
-          <DropdownMenuRadioGroup value={theme} onValueChange={(value) => setTheme(value as Theme)}>
+          <DropdownMenuRadioGroup
+            value={theme}
+            onValueChange={(value) => isTheme(value) && setTheme(value)}
+          >
             <DropdownMenuRadioItem value="light">
               <SunIcon className="h-4 w-4 text-secondary" />
               Light

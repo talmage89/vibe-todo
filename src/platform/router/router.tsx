@@ -10,6 +10,8 @@ import { AppLayout } from "~/components/layout/app-layout";
 import { Login } from "~/features/auth/login";
 import { ProjectSettings } from "~/features/project/project-settings";
 import { ProjectView } from "~/features/project/project-view";
+import { Settings } from "~/features/settings/settings";
+import { isSettingsSection, type SettingsSearch } from "~/features/settings/types";
 import { Tmp } from "~/features/tmp";
 import { ProtectedRoute } from "~/platform/auth/protected-route";
 
@@ -64,11 +66,27 @@ const ProjectSettingsRoute = createRoute({
   ),
 });
 
+const SettingsRoute = createRoute({
+  getParentRoute: () => RootRoute,
+  path: "/settings",
+  validateSearch: (search: Record<string, unknown>): SettingsSearch => ({
+    section: isSettingsSection(search.section) ? search.section : undefined,
+  }),
+  component: () => (
+    <ProtectedRoute>
+      <AppLayout>
+        <Settings />
+      </AppLayout>
+    </ProtectedRoute>
+  ),
+});
+
 export const routeTree = RootRoute.addChildren([
   IndexRoute,
   LoginRoute,
   ProjectRoute,
   ProjectSettingsRoute,
+  SettingsRoute,
 ]);
 
 export const createAppRouter = (url: string) =>
