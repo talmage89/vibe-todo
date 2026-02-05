@@ -14,20 +14,13 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { type KeyboardEvent, useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/components/ui/cn";
-
-interface Project {
-  id: string;
-  name: string;
-  color: string | null;
-  taskCount?: number;
-}
+import { ProjectCreateModal } from "~/features/projects/components/project-create-modal";
+import { useProjects } from "~/features/projects/hooks/use-projects";
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  projects?: Project[];
   onAddTask?: () => void;
-  onAddProject?: () => void;
 }
 
 const navItems = [
@@ -36,15 +29,18 @@ const navItems = [
   { path: "/upcoming", label: "Upcoming", icon: CalendarDaysIcon },
 ] as const;
 
-export const Sidebar = ({
-  isOpen,
-  onClose,
-  projects = [],
-  onAddTask,
-  onAddProject,
-}: SidebarProps) => {
+export const Sidebar = ({ isOpen, onClose, onAddTask }: SidebarProps) => {
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;
+  const { projects, loading, createProject } = useProjects();
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+
+  const handleCreateProject = useCallback(
+    async (data: { name: string; color?: string }) => {
+      await createProject(data);
+    },
+    [createProject],
+  );
 
   const [projectsExpanded, setProjectsExpanded] = useState(true);
   const [focusedIndex, setFocusedIndex] = useState(-1);
@@ -58,7 +54,7 @@ export const Sidebar = ({
 
     // Quick actions
     if (onAddTask) items.push({ type: "action", id: "add-task" });
-    if (onAddProject) items.push({ type: "action", id: "add-project" });
+    items.push({ type: "action", id: "add-project" });
 
     // Navigation items
     for (const item of navItems) {
@@ -79,7 +75,7 @@ export const Sidebar = ({
     items.push({ type: "settings", id: "settings" });
 
     return items;
-  }, [projects, projectsExpanded, onAddTask, onAddProject]);
+  }, [projects, projectsExpanded, onAddTask]);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLElement>) => {
@@ -182,34 +178,30 @@ export const Sidebar = ({
           aria-label="Main navigation"
         >
           {/* Quick actions */}
-          {(onAddTask || onAddProject) && (
-            <div className="mb-4 flex gap-2">
-              {onAddTask && (
-                <Button
-                  ref={(el) => setItemRef(refIndex++, el)}
-                  variant="outline"
-                  size="sm"
-                  onClick={onAddTask}
-                  className="flex-1"
-                >
-                  <PlusIcon className="h-4 w-4" />
-                  Task
-                </Button>
-              )}
-              {onAddProject && (
-                <Button
-                  ref={(el) => setItemRef(refIndex++, el)}
-                  variant="outline"
-                  size="sm"
-                  onClick={onAddProject}
-                  className="flex-1"
-                >
-                  <FolderIcon className="h-4 w-4" />
-                  Project
-                </Button>
-              )}
-            </div>
-          )}
+          <div className="mb-4 flex gap-2">
+            {onAddTask && (
+              <Button
+                ref={(el) => setItemRef(refIndex++, el)}
+                variant="outline"
+                size="sm"
+                onClick={onAddTask}
+                className="flex-1"
+              >
+                <PlusIcon className="h-4 w-4" />
+                Task
+              </Button>
+            )}
+            <Button
+              ref={(el) => setItemRef(refIndex++, el)}
+              variant="outline"
+              size="sm"
+              onClick={() => setCreateModalOpen(true)}
+              className="flex-1"
+            >
+              <FolderIcon className="h-4 w-4" />
+              Project
+            </Button>
+          </div>
 
           {/* Main navigation */}
           <ul className="space-y-1" role="list">
@@ -264,7 +256,9 @@ export const Sidebar = ({
 
             {projectsExpanded && (
               <ul id="projects-list" className="mt-1 space-y-1" role="list">
-                {projects.length === 0 ? (
+                {loading ? (
+                  <li className="px-3 py-2 text-secondary text-sm">Loading...</li>
+                ) : projects.length === 0 ? (
                   <li className="px-3 py-2 text-secondary text-sm">No projects yet</li>
                 ) : (
                   projects.map((project) => {
@@ -294,12 +288,7 @@ export const Sidebar = ({
                           ) : (
                             <HashtagIcon className="h-5 w-5" />
                           )}
-                          <span className="flex-1 truncate">{project.name}</span>
-                          {project.taskCount !== undefined && project.taskCount > 0 && (
-                            <span className="shrink-0 text-secondary text-xs tabular-nums">
-                              {project.taskCount}
-                            </span>
-                          )}
+                          <span className="truncate">{project.name}</span>
                         </Link>
                       </li>
                     );
@@ -328,6 +317,12 @@ export const Sidebar = ({
           </Link>
         </div>
       </aside>
+
+      <ProjectCreateModal
+        open={createModalOpen}
+        onOpenChange={setCreateModalOpen}
+        onSubmit={handleCreateProject}
+      />
     </>
   );
 };
