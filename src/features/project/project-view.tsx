@@ -2,6 +2,8 @@ import { Cog6ToothIcon } from "@heroicons/react/24/outline";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "~/components/ui/button";
+import { SectionList } from "~/features/sections/components/section-list";
+import { useSections } from "~/features/sections/hooks/use-sections";
 
 interface Project {
   id: string;
@@ -16,6 +18,15 @@ export function ProjectView() {
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const {
+    sections,
+    loading: sectionsLoading,
+    createSection,
+    updateSection,
+    deleteSection,
+    reorderSections,
+  } = useSections(projectId);
 
   const fetchProject = useCallback(async () => {
     try {
@@ -69,7 +80,11 @@ export function ProjectView() {
       <header className="flex items-center justify-between border-border border-b px-6 py-4">
         <div className="flex items-center gap-3">
           {project.color && (
-            <div className="h-3 w-3 rounded-full" style={{ backgroundColor: project.color }} />
+            <span
+              className="h-3 w-3 shrink-0 rounded-full"
+              style={{ backgroundColor: project.color }}
+              aria-hidden="true"
+            />
           )}
           <h1 className="font-semibold text-lg text-primary">{project.name}</h1>
         </div>
@@ -82,8 +97,18 @@ export function ProjectView() {
           <Cog6ToothIcon className="h-5 w-5" />
         </Link>
       </header>
-      <main className="flex flex-1 items-center justify-center">
-        <p className="text-secondary text-sm">No tasks yet</p>
+      <main className="flex-1 overflow-y-auto p-6">
+        {sectionsLoading ? (
+          <p className="text-secondary text-sm">Loading sections...</p>
+        ) : (
+          <SectionList
+            sections={sections}
+            onCreateSection={createSection}
+            onUpdateSection={updateSection}
+            onDeleteSection={deleteSection}
+            onReorderSections={reorderSections}
+          />
+        )}
       </main>
     </div>
   );
