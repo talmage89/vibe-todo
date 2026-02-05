@@ -10,10 +10,8 @@ import {
 } from "~/components/ui/select";
 import { useToast } from "~/components/ui/toast";
 import { useAuth } from "~/platform/auth/use-auth";
+import { DefaultView, Theme } from "~/platform/db/generated";
 import { useTheme } from "~/platform/theme/use-theme";
-
-type Theme = "LIGHT" | "DARK" | "SYSTEM";
-type DefaultView = "LIST" | "KANBAN";
 
 interface Project {
   id: string;
@@ -21,14 +19,14 @@ interface Project {
 }
 
 const themeOptions: { value: Theme; label: string }[] = [
-  { value: "SYSTEM", label: "System" },
-  { value: "LIGHT", label: "Light" },
-  { value: "DARK", label: "Dark" },
+  { value: Theme.SYSTEM, label: "System" },
+  { value: Theme.LIGHT, label: "Light" },
+  { value: Theme.DARK, label: "Dark" },
 ];
 
 const viewOptions: { value: DefaultView; label: string }[] = [
-  { value: "LIST", label: "List" },
-  { value: "KANBAN", label: "Kanban" },
+  { value: DefaultView.LIST, label: "List" },
+  { value: DefaultView.KANBAN, label: "Kanban" },
 ];
 
 export function PreferencesSection() {
@@ -36,8 +34,10 @@ export function PreferencesSection() {
   const { setTheme: setClientTheme } = useTheme();
   const { toast } = useToast();
 
-  const [theme, setTheme] = useState<Theme>(user?.theme ?? "SYSTEM");
-  const [defaultView, setDefaultView] = useState<DefaultView>(user?.defaultView ?? "LIST");
+  const [theme, setTheme] = useState<Theme>(user?.theme ?? Theme.SYSTEM);
+  const [defaultView, setDefaultView] = useState<DefaultView>(
+    user?.defaultView ?? DefaultView.LIST,
+  );
   const [defaultProjectId, setDefaultProjectId] = useState<string | null>(
     user?.defaultProjectId ?? null,
   );
@@ -47,8 +47,8 @@ export function PreferencesSection() {
 
   useEffect(() => {
     if (user) {
-      setTheme(user.theme ?? "SYSTEM");
-      setDefaultView(user.defaultView ?? "LIST");
+      setTheme(user.theme ?? Theme.SYSTEM);
+      setDefaultView(user.defaultView ?? DefaultView.LIST);
       setDefaultProjectId(user.defaultProjectId ?? null);
     }
   }, [user]);
@@ -70,8 +70,8 @@ export function PreferencesSection() {
 
   useEffect(() => {
     const changed =
-      theme !== (user?.theme ?? "SYSTEM") ||
-      defaultView !== (user?.defaultView ?? "LIST") ||
+      theme !== (user?.theme ?? Theme.SYSTEM) ||
+      defaultView !== (user?.defaultView ?? DefaultView.LIST) ||
       defaultProjectId !== (user?.defaultProjectId ?? null);
     setHasChanges(changed);
   }, [theme, defaultView, defaultProjectId, user]);
@@ -114,8 +114,8 @@ export function PreferencesSection() {
   };
 
   const handleReset = () => {
-    setTheme(user?.theme ?? "SYSTEM");
-    setDefaultView(user?.defaultView ?? "LIST");
+    setTheme(user?.theme ?? Theme.SYSTEM);
+    setDefaultView(user?.defaultView ?? DefaultView.LIST);
     setDefaultProjectId(user?.defaultProjectId ?? null);
   };
 

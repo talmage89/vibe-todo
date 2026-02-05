@@ -2,6 +2,7 @@ import { Elysia } from "elysia";
 import { z } from "zod";
 import { type AuthUser, authMiddleware, requireAuth } from "~/platform/auth/middleware";
 import { db } from "~/platform/db";
+import { DefaultView, Theme } from "~/platform/db/generated";
 
 function getMeHandler({ user }: { user: AuthUser | undefined }) {
   const authenticatedUser = requireAuth(user);
@@ -22,8 +23,8 @@ function getMeHandler({ user }: { user: AuthUser | undefined }) {
 
 const updateMeSchema = z.object({
   name: z.union([z.string(), z.null()]).optional(),
-  theme: z.enum(["LIGHT", "DARK", "SYSTEM"]).optional(),
-  defaultView: z.enum(["LIST", "KANBAN"]).optional(),
+  theme: z.nativeEnum(Theme).optional(),
+  defaultView: z.nativeEnum(DefaultView).optional(),
   defaultProjectId: z.union([z.string(), z.null()]).optional(),
 });
 
