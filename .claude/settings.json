@@ -1,6 +1,18 @@
 {
   "permissions": {
-    "allow": ["Bash(bun *)", "Bash(bunx *)", "Bash(git *)", "Bash(bd *)", "Bash(curl *)"],
+    "allow": [
+      "Bash(bun *)",
+      "Bash(bun:*)",
+      "Bash(bunx *)",
+      "Bash(bunx:*)",
+      "Bash(git *)",
+      "Bash(git:*)",
+      "Bash(bd *)",
+      "Bash(bd:*)",
+      "Bash(curl *)",
+      "Bash(curl:*)",
+      "Read(**/.giteaconfig)"
+    ],
     "deny": ["Read(./.env)", "Read(./.env.*)"]
   }
 }

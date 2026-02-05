@@ -1,6 +1,6 @@
 # Implement
 
-You are tasked with implementing a bead from the epic provided below, or with the current epic if none provided.
+You are tasked with implementing a bead from the epic/task provided below, or with the current epic if none provided.
 
 ## Workflow
 
@@ -21,4 +21,4 @@ You are tasked with implementing a bead from the epic provided below, or with th
 ## PRs
 
 - Create descriptive-yet-direct PR descriptions.
-- Your PR MUST be created with the label "pending".
+- Your PR MUST be created with the label "pending". You will have to query the Gitea API to identify its ID.

@@ -19,6 +19,7 @@ interface Project {
   id: string;
   name: string;
   color: string | null;
+  taskCount?: number;
 }
 
 interface SidebarProps {
@@ -293,7 +294,12 @@ export const Sidebar = ({
                           ) : (
                             <HashtagIcon className="h-5 w-5" />
                           )}
-                          {project.name}
+                          <span className="flex-1 truncate">{project.name}</span>
+                          {project.taskCount !== undefined && project.taskCount > 0 && (
+                            <span className="shrink-0 text-secondary text-xs tabular-nums">
+                              {project.taskCount}
+                            </span>
+                          )}
                         </Link>
                       </li>
                     );
