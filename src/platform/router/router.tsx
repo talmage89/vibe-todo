@@ -8,6 +8,8 @@ import {
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { AppLayout } from "~/components/layout/app-layout";
 import { Login } from "~/features/auth/login";
+import { ProjectSettings } from "~/features/project/project-settings";
+import { ProjectView } from "~/features/project/project-view";
 import { Tmp } from "~/features/tmp";
 import { ProtectedRoute } from "~/platform/auth/protected-route";
 
@@ -38,7 +40,36 @@ const IndexRoute = createRoute({
   ),
 });
 
-export const routeTree = RootRoute.addChildren([IndexRoute, LoginRoute]);
+const ProjectRoute = createRoute({
+  getParentRoute: () => RootRoute,
+  path: "/project/$projectId",
+  component: () => (
+    <ProtectedRoute>
+      <AppLayout>
+        <ProjectView />
+      </AppLayout>
+    </ProtectedRoute>
+  ),
+});
+
+const ProjectSettingsRoute = createRoute({
+  getParentRoute: () => RootRoute,
+  path: "/project/$projectId/settings",
+  component: () => (
+    <ProtectedRoute>
+      <AppLayout>
+        <ProjectSettings />
+      </AppLayout>
+    </ProtectedRoute>
+  ),
+});
+
+export const routeTree = RootRoute.addChildren([
+  IndexRoute,
+  LoginRoute,
+  ProjectRoute,
+  ProjectSettingsRoute,
+]);
 
 export const createAppRouter = (url: string) =>
   createRouter({
