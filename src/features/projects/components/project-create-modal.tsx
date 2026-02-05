@@ -74,7 +74,7 @@ export const ProjectCreateModal = ({ open, onOpenChange, onSubmit }: ProjectCrea
             <DialogCloseButton />
           </DialogHeader>
           <DialogBody className="space-y-4">
-            <div className="space-y-1.5">
+            <div className="grid gap-1.5">
               <label htmlFor="project-name" className="font-medium text-primary text-sm">
                 Name
               </label>
@@ -88,7 +88,7 @@ export const ProjectCreateModal = ({ open, onOpenChange, onSubmit }: ProjectCrea
               />
               {error && <p className="text-sm text-urgent">{error}</p>}
             </div>
-            <div className="space-y-1.5">
+            <div className="grid gap-1.5">
               <label className="font-medium text-primary text-sm">Color</label>
               <ColorPicker value={color} onChange={setColor} />
             </div>

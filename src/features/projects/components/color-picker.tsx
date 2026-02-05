@@ -8,14 +8,14 @@ interface ColorPickerProps {
 
 export const ColorPicker = ({ value, onChange }: ColorPickerProps) => {
   return (
-    <div className="flex flex-wrap justify-center gap-2">
+    <div className="grid grid-cols-6 gap-2">
       {PROJECT_COLORS.map((color) => (
         <button
           key={color.value}
           type="button"
           onClick={() => onChange(color.value)}
           className={cn(
-            "h-7 w-7 rounded transition-all",
+            "aspect-square w-full cursor-pointer rounded transition-all",
             value === color.value && "ring-2 ring-accent ring-offset-2 ring-offset-background",
           )}
           style={{ backgroundColor: color.value }}
