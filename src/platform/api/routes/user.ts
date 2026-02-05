@@ -105,6 +105,7 @@ async function exportDataHandler({ user }: { user: AuthUser | undefined }) {
           tasks: {
             include: {
               subtasks: true,
+              tags: true,
             },
           },
           tags: true,
@@ -119,6 +120,8 @@ async function exportDataHandler({ user }: { user: AuthUser | undefined }) {
     user: {
       email: userData?.email,
       name: userData?.name,
+      theme: userData?.theme,
+      defaultView: userData?.defaultView,
       createdAt: userData?.createdAt,
     },
     accounts: userData?.accounts,
