@@ -6,13 +6,10 @@ import { type AuthUser, authMiddleware, requireAuth } from "~/platform/auth/midd
 import { db } from "~/platform/db";
 import { TaskPriority, TaskStatus } from "~/platform/db/generated";
 
-const taskPriorityValues = Object.values(TaskPriority) as [string, ...string[]];
-const taskStatusValues = Object.values(TaskStatus) as [string, ...string[]];
-
 const getTasksQuerySchema = z.object({
   sectionId: z.string().optional(),
-  status: z.enum(taskStatusValues).optional(),
-  priority: z.enum(taskPriorityValues).optional(),
+  status: z.enum(TaskStatus).optional(),
+  priority: z.enum(TaskPriority).optional(),
 });
 
 type GetTasksHandlerProps = {
@@ -29,8 +26,8 @@ async function getTasksHandler({ user, params, query }: GetTasksHandlerProps) {
     where: {
       projectId: params.projectId,
       ...(query.sectionId !== undefined && { sectionId: query.sectionId }),
-      ...(query.status !== undefined && { status: query.status as TaskStatus }),
-      ...(query.priority !== undefined && { priority: query.priority as TaskPriority }),
+      ...(query.status !== undefined && { status: query.status }),
+      ...(query.priority !== undefined && { priority: query.priority }),
     },
     include: {
       subtasks: {
@@ -52,8 +49,8 @@ const createTaskSchema = z.object({
     .transform((val) => val.trim()),
   description: z.string().optional(),
   dueDate: z.coerce.date().optional(),
-  priority: z.enum(taskPriorityValues).optional(),
-  status: z.enum(taskStatusValues).optional(),
+  priority: z.enum(TaskPriority).optional(),
+  status: z.enum(TaskStatus).optional(),
   sectionId: z.string().nullable().optional(),
   tagIds: z.array(z.string()).optional(),
 });
@@ -103,8 +100,8 @@ async function createTaskHandler({ user, params, body }: CreateTaskHandlerProps)
       title: body.title,
       description: body.description,
       dueDate: body.dueDate,
-      priority: (body.priority as TaskPriority) ?? TaskPriority.NONE,
-      status: (body.status as TaskStatus) ?? TaskStatus.TODO,
+      priority: body.priority ?? TaskPriority.NONE,
+      status: body.status ?? TaskStatus.TODO,
       position: nextPosition,
       userId: authenticatedUser.id,
       projectId: params.projectId,
@@ -160,8 +157,8 @@ const updateTaskSchema = z.object({
     .optional(),
   description: z.string().nullable().optional(),
   dueDate: z.coerce.date().nullable().optional(),
-  priority: z.enum(taskPriorityValues).optional(),
-  status: z.enum(taskStatusValues).optional(),
+  priority: z.enum(TaskPriority).optional(),
+  status: z.enum(TaskStatus).optional(),
   sectionId: z.string().nullable().optional(),
   tagIds: z.array(z.string()).optional(),
 });
@@ -220,8 +217,8 @@ async function updateTaskHandler({ user, params, body }: UpdateTaskHandlerProps)
       ...(body.title !== undefined && { title: body.title }),
       ...(body.description !== undefined && { description: body.description }),
       ...(body.dueDate !== undefined && { dueDate: body.dueDate }),
-      ...(body.priority !== undefined && { priority: body.priority as TaskPriority }),
-      ...(body.status !== undefined && { status: body.status as TaskStatus }),
+      ...(body.priority !== undefined && { priority: body.priority }),
+      ...(body.status !== undefined && { status: body.status }),
       ...(body.sectionId !== undefined && {
         sectionId: body.sectionId,
         position: newPosition,

@@ -11,7 +11,8 @@ import {
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
-import type { CreateTaskData, Tag, TaskPriority } from "../hooks/use-tasks";
+import { TaskPriority } from "~/platform/db/generated";
+import type { CreateTaskData, Tag } from "../hooks/use-tasks";
 import { PrioritySelect } from "./priority-select";
 import { TagSelect } from "./tag-select";
 
@@ -33,7 +34,7 @@ export function TaskCreateModal({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState("");
-  const [priority, setPriority] = useState<TaskPriority>("NONE");
+  const [priority, setPriority] = useState<TaskPriority>(TaskPriority.NONE);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -42,7 +43,7 @@ export function TaskCreateModal({
     setTitle("");
     setDescription("");
     setDueDate("");
-    setPriority("NONE");
+    setPriority(TaskPriority.NONE);
     setSelectedTagIds([]);
     setError(null);
     setLoading(false);
@@ -85,7 +86,7 @@ export function TaskCreateModal({
           data.dueDate = new Date(dueDate);
         }
 
-        if (priority !== "NONE") {
+        if (priority !== TaskPriority.NONE) {
           data.priority = priority;
         }
 

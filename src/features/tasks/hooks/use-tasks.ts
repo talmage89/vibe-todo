@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import type { TaskPriority, TaskStatus } from "~/platform/db/generated";
 
 export interface Tag {
   id: string;
@@ -12,9 +13,6 @@ export interface Subtask {
   completed: boolean;
   position: number;
 }
-
-export type TaskPriority = "NONE" | "LOW" | "MEDIUM" | "HIGH" | "URGENT";
-export type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE";
 
 export interface Task {
   id: string;
