@@ -12,10 +12,6 @@ interface UseAuthReturn extends AuthState {
   logout: () => Promise<void>;
 }
 
-/**
- * Hook to manage client-side authentication state.
- * Fetches the current user from /api/me and provides loading/error states.
- */
 export const useAuth = (): UseAuthReturn => {
   const [state, setState] = useState<AuthState>({
     user: null,
@@ -30,7 +26,6 @@ export const useAuth = (): UseAuthReturn => {
       const response = await fetch("/api/me");
 
       if (response.status === 401) {
-        // Not authenticated - this is expected
         setState({ user: null, loading: false, error: null });
         return;
       }

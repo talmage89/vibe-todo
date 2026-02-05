@@ -32,7 +32,6 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
 
   const resolvedTheme = theme === "system" ? systemTheme : theme;
 
-  // Listen for system theme changes
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
@@ -44,7 +43,6 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
 
-  // Apply theme class to document
   useEffect(() => {
     const root = document.documentElement;
     root.classList.remove("light", "dark");

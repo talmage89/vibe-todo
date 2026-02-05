@@ -12,10 +12,6 @@ const sizeClasses = {
   lg: "h-8 w-8 border-2",
 };
 
-/**
- * Circular loading spinner.
- * Use for indicating loading states.
- */
 export const Spinner = ({ size = "md", className, label }: SpinnerProps) => {
   return (
     <div
@@ -34,9 +30,6 @@ export const Spinner = ({ size = "md", className, label }: SpinnerProps) => {
   );
 };
 
-/**
- * Full-page loading state with centered spinner.
- */
 export const LoadingPage = ({ label = "Loading..." }: { label?: string }) => {
   return (
     <div className="flex h-full min-h-[200px] items-center justify-center">

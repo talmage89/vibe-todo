@@ -9,3 +9,7 @@ export class AuthenticationError extends ApiError {
 export class AuthorizationError extends ApiError {
   override status = 403;
 }
+
+export class ValidationError extends ApiError {
+  override status = 400;
+}

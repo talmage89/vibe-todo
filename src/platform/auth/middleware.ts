@@ -1,20 +1,23 @@
 import { Elysia } from "elysia";
 import { db } from "../db";
-import type { User } from "../db/generated";
+import type { Prisma } from "../db/generated";
 import { AuthenticationError } from "./errors";
 import { SESSION_COOKIE_NAME, validateSession } from "./session";
 
-/**
- * Extended context type with optional user from auth middleware.
- */
+const userSelect = {
+  id: true,
+  email: true,
+  name: true,
+  avatar: true,
+  createdAt: true,
+};
+
+export type AuthUser = Prisma.UserGetPayload<{ select: typeof userSelect }>;
+
 export interface AuthContext extends Record<string, unknown> {
-  user?: User;
+  user?: AuthUser;
 }
 
-/**
- * Auth middleware plugin that validates session cookies and attaches user to context.
- * Does not block requests - use requireAuth() in handlers to enforce authentication.
- */
 export const authMiddleware = new Elysia({ name: "auth-middleware" }).derive(
   { as: "global" },
   async ({ cookie }) => {
@@ -27,25 +30,14 @@ export const authMiddleware = new Elysia({ name: "auth-middleware" }).derive(
 
     const user = await db.user.findUnique({
       where: { id: userId },
+      select: userSelect,
     });
 
     return { user: user ?? undefined };
   },
 );
 
-/**
- * Type guard and helper to enforce authentication in route handlers.
- * Throws an error if user is not authenticated.
- *
- * @example
- * ```ts
- * app.get('/api/me', ({ user }) => {
- *   const authenticatedUser = requireAuth(user);
- *   return { user: authenticatedUser };
- * });
- * ```
- */
-export const requireAuth = (user: User | undefined): User => {
+export const requireAuth = (user: AuthUser | undefined): AuthUser => {
   if (!user) {
     throw new AuthenticationError("Unauthorized: Authentication required");
   }

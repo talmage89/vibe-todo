@@ -1,6 +1,3 @@
-/**
- * Time constants in milliseconds
- */
 export enum Time {
   ONE_SECOND = 1000,
   ONE_MINUTE = 60 * ONE_SECOND,

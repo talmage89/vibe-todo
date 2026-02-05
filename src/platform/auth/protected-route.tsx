@@ -4,24 +4,9 @@ import { useAuth } from "./use-auth";
 
 interface ProtectedRouteProps {
   children: ReactNode;
-  /**
-   * Path to redirect to when user is not authenticated.
-   * Defaults to "/login"
-   */
   redirectTo?: string;
 }
 
-/**
- * Wrapper component that protects routes by checking authentication status.
- * Redirects to login page if user is not authenticated.
- *
- * @example
- * ```tsx
- * <ProtectedRoute>
- *   <Dashboard />
- * </ProtectedRoute>
- * ```
- */
 export const ProtectedRoute = ({ children, redirectTo = "/login" }: ProtectedRouteProps) => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -32,7 +17,6 @@ export const ProtectedRoute = ({ children, redirectTo = "/login" }: ProtectedRou
     }
   }, [user, loading, redirectTo, navigate]);
 
-  // Show loading state while checking authentication
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -44,11 +28,9 @@ export const ProtectedRoute = ({ children, redirectTo = "/login" }: ProtectedRou
     );
   }
 
-  // User is not authenticated, show nothing while redirecting
   if (!user) {
     return null;
   }
 
-  // User is authenticated, render children
   return <>{children}</>;
 };

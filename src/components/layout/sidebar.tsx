@@ -14,20 +14,13 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { type KeyboardEvent, useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/components/ui/cn";
-
-interface Project {
-  id: string;
-  name: string;
-  color: string | null;
-  taskCount?: number;
-}
+import { ProjectCreateModal } from "~/features/projects/components/project-create-modal";
+import { useProjects } from "~/features/projects/hooks/use-projects";
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  projects?: Project[];
   onAddTask?: () => void;
-  onAddProject?: () => void;
 }
 
 const navItems = [
@@ -36,15 +29,18 @@ const navItems = [
   { path: "/upcoming", label: "Upcoming", icon: CalendarDaysIcon },
 ] as const;
 
-export const Sidebar = ({
-  isOpen,
-  onClose,
-  projects = [],
-  onAddTask,
-  onAddProject,
-}: SidebarProps) => {
+export const Sidebar = ({ isOpen, onClose, onAddTask }: SidebarProps) => {
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;
+  const { projects, loading, createProject } = useProjects();
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+
+  const handleCreateProject = useCallback(
+    async (data: { name: string; color?: string }) => {
+      await createProject(data);
+    },
+    [createProject],
+  );
 
   const [projectsExpanded, setProjectsExpanded] = useState(true);
   const [focusedIndex, setFocusedIndex] = useState(-1);
@@ -52,34 +48,28 @@ export const Sidebar = ({
   const navRef = useRef<HTMLElement>(null);
   const itemRefs = useRef<(HTMLAnchorElement | HTMLButtonElement | null)[]>([]);
 
-  // Build flat list of focusable items for keyboard navigation
   const getFocusableItems = useCallback(() => {
     const items: { type: "nav" | "project" | "action" | "settings"; id: string }[] = [];
 
-    // Quick actions
     if (onAddTask) items.push({ type: "action", id: "add-task" });
-    if (onAddProject) items.push({ type: "action", id: "add-project" });
+    items.push({ type: "action", id: "add-project" });
 
-    // Navigation items
     for (const item of navItems) {
       items.push({ type: "nav", id: item.path });
     }
 
-    // Projects header toggle
     items.push({ type: "action", id: "projects-toggle" });
 
-    // Project items (only if expanded)
     if (projectsExpanded) {
       for (const project of projects) {
         items.push({ type: "project", id: project.id });
       }
     }
 
-    // Settings
     items.push({ type: "settings", id: "settings" });
 
     return items;
-  }, [projects, projectsExpanded, onAddTask, onAddProject]);
+  }, [projects, projectsExpanded, onAddTask]);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLElement>) => {
@@ -122,14 +112,12 @@ export const Sidebar = ({
     [focusedIndex, getFocusableItems, onClose],
   );
 
-  // Reset focus index when sidebar closes
   useEffect(() => {
     if (!isOpen) {
       setFocusedIndex(-1);
     }
   }, [isOpen]);
 
-  // Store ref at given index
   const setItemRef = useCallback(
     (index: number, el: HTMLAnchorElement | HTMLButtonElement | null) => {
       itemRefs.current[index] = el;
@@ -141,7 +129,6 @@ export const Sidebar = ({
 
   return (
     <>
-      {/* Mobile overlay */}
       {isOpen && (
         <div
           className="fixed inset-0 z-40 bg-primary/20 lg:hidden"
@@ -150,14 +137,12 @@ export const Sidebar = ({
         />
       )}
 
-      {/* Sidebar */}
       <aside
         className={cn(
           "fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-border border-r bg-surface transition-transform duration-150 ease-out lg:static lg:translate-x-0",
           isOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
-        {/* Logo/Brand */}
         <div className="flex h-14 items-center justify-between border-border border-b px-4">
           <Link to="/" className="font-semibold text-lg text-primary">
             Todo
@@ -173,7 +158,6 @@ export const Sidebar = ({
           </Button>
         </div>
 
-        {/* Navigation */}
         <nav
           ref={navRef}
           className="flex-1 overflow-y-auto p-3"
@@ -181,37 +165,31 @@ export const Sidebar = ({
           role="navigation"
           aria-label="Main navigation"
         >
-          {/* Quick actions */}
-          {(onAddTask || onAddProject) && (
-            <div className="mb-4 flex gap-2">
-              {onAddTask && (
-                <Button
-                  ref={(el) => setItemRef(refIndex++, el)}
-                  variant="outline"
-                  size="sm"
-                  onClick={onAddTask}
-                  className="flex-1"
-                >
-                  <PlusIcon className="h-4 w-4" />
-                  Task
-                </Button>
-              )}
-              {onAddProject && (
-                <Button
-                  ref={(el) => setItemRef(refIndex++, el)}
-                  variant="outline"
-                  size="sm"
-                  onClick={onAddProject}
-                  className="flex-1"
-                >
-                  <FolderIcon className="h-4 w-4" />
-                  Project
-                </Button>
-              )}
-            </div>
-          )}
+          <div className="mb-4 flex gap-2">
+            {onAddTask && (
+              <Button
+                ref={(el) => setItemRef(refIndex++, el)}
+                variant="outline"
+                size="sm"
+                onClick={onAddTask}
+                className="flex-1"
+              >
+                <PlusIcon className="h-4 w-4" />
+                Task
+              </Button>
+            )}
+            <Button
+              ref={(el) => setItemRef(refIndex++, el)}
+              variant="outline"
+              size="sm"
+              onClick={() => setCreateModalOpen(true)}
+              className="flex-1"
+            >
+              <FolderIcon className="h-4 w-4" />
+              Project
+            </Button>
+          </div>
 
-          {/* Main navigation */}
           <ul className="space-y-1" role="list">
             {navItems.map((item) => {
               const isActive = currentPath === item.path;
@@ -240,7 +218,6 @@ export const Sidebar = ({
             })}
           </ul>
 
-          {/* Projects section */}
           <div className="mt-6">
             <button
               ref={(el) => setItemRef(refIndex++, el)}
@@ -264,7 +241,9 @@ export const Sidebar = ({
 
             {projectsExpanded && (
               <ul id="projects-list" className="mt-1 space-y-1" role="list">
-                {projects.length === 0 ? (
+                {loading ? (
+                  <li className="px-3 py-2 text-secondary text-sm">Loading...</li>
+                ) : projects.length === 0 ? (
                   <li className="px-3 py-2 text-secondary text-sm">No projects yet</li>
                 ) : (
                   projects.map((project) => {
@@ -294,12 +273,7 @@ export const Sidebar = ({
                           ) : (
                             <HashtagIcon className="h-5 w-5" />
                           )}
-                          <span className="flex-1 truncate">{project.name}</span>
-                          {project.taskCount !== undefined && project.taskCount > 0 && (
-                            <span className="shrink-0 text-secondary text-xs tabular-nums">
-                              {project.taskCount}
-                            </span>
-                          )}
+                          <span className="truncate">{project.name}</span>
                         </Link>
                       </li>
                     );
@@ -310,7 +284,6 @@ export const Sidebar = ({
           </div>
         </nav>
 
-        {/* Sidebar footer */}
         <div className="border-border border-t p-3">
           <Link
             ref={(el) => setItemRef(refIndex++, el)}
@@ -328,6 +301,12 @@ export const Sidebar = ({
           </Link>
         </div>
       </aside>
+
+      <ProjectCreateModal
+        open={createModalOpen}
+        onOpenChange={setCreateModalOpen}
+        onSubmit={handleCreateProject}
+      />
     </>
   );
 };
