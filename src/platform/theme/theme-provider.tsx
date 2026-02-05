@@ -1,11 +1,10 @@
 import { createContext, useCallback, useEffect, useMemo, useState } from "react";
+import { Theme } from "~/platform/db/generated";
 
-export type Theme = "light" | "dark" | "system";
-
-const THEMES = ["light", "dark", "system"] as const;
+export { Theme };
 
 export function isTheme(value: unknown): value is Theme {
-  return typeof value === "string" && THEMES.includes(value as Theme);
+  return value === Theme.LIGHT || value === Theme.DARK || value === Theme.SYSTEM;
 }
 
 interface ThemeContextValue {
@@ -26,17 +25,18 @@ function getSystemTheme(): "light" | "dark" {
 function getStoredTheme(): Theme | null {
   if (typeof window === "undefined") return null;
   const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored === "light" || stored === "dark" || stored === "system") {
-    return stored;
+  if (stored === Theme.LIGHT || stored === Theme.DARK || stored === Theme.SYSTEM) {
+    return stored as Theme;
   }
   return null;
 }
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
-  const [theme, setThemeState] = useState<Theme>(() => getStoredTheme() ?? "system");
+  const [theme, setThemeState] = useState<Theme>(() => getStoredTheme() ?? Theme.SYSTEM);
   const [systemTheme, setSystemTheme] = useState<"light" | "dark">(getSystemTheme);
 
-  const resolvedTheme = theme === "system" ? systemTheme : theme;
+  const resolvedTheme =
+    theme === Theme.SYSTEM ? systemTheme : (theme.toLowerCase() as "light" | "dark");
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");

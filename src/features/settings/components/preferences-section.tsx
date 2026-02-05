@@ -97,7 +97,7 @@ export function PreferencesSection() {
       }
 
       // Sync theme with client-side theme provider
-      setClientTheme(theme.toLowerCase() as "light" | "dark" | "system");
+      setClientTheme(theme);
 
       await refetch();
       setHasChanges(false);
