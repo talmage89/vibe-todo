@@ -6,6 +6,7 @@ interface Project {
   id: string;
   name: string;
   color: string | null;
+  taskCount?: number;
 }
 
 interface AppLayoutProps {
