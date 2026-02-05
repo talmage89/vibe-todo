@@ -1,24 +1,9 @@
 import { Elysia } from "elysia";
 import { z } from "zod";
-import { AuthorizationError, NotFoundError, ValidationError } from "~/platform/auth/errors";
+import { verifyProjectAccess, verifySectionAccess } from "~/platform/api/access";
+import { ValidationError } from "~/platform/auth/errors";
 import { type AuthUser, authMiddleware, requireAuth } from "~/platform/auth/middleware";
 import { db } from "~/platform/db";
-
-async function verifyProjectAccess(userId: string, projectId: string) {
-  const project = await db.project.findUnique({
-    where: { id: projectId },
-  });
-
-  if (!project) {
-    throw new NotFoundError("Project not found");
-  }
-
-  if (project.userId !== userId) {
-    throw new AuthorizationError("You do not have access to this project");
-  }
-
-  return project;
-}
 
 type GetSectionsHandlerProps = {
   user: AuthUser | undefined;
@@ -80,19 +65,11 @@ type GetSectionHandlerProps = {
 
 async function getSectionHandler({ user, params }: GetSectionHandlerProps) {
   const authenticatedUser = requireAuth(user);
-  await verifyProjectAccess(authenticatedUser.id, params.projectId);
-
-  const section = await db.section.findUnique({
-    where: { id: params.sectionId },
-  });
-
-  if (!section) {
-    throw new NotFoundError("Section not found");
-  }
-
-  if (section.projectId !== params.projectId) {
-    throw new NotFoundError("Section not found in this project");
-  }
+  const section = await verifySectionAccess(
+    authenticatedUser.id,
+    params.projectId,
+    params.sectionId,
+  );
 
   return { success: true, section };
 }
@@ -114,19 +91,7 @@ type UpdateSectionHandlerProps = {
 
 async function updateSectionHandler({ user, params, body }: UpdateSectionHandlerProps) {
   const authenticatedUser = requireAuth(user);
-  await verifyProjectAccess(authenticatedUser.id, params.projectId);
-
-  const section = await db.section.findUnique({
-    where: { id: params.sectionId },
-  });
-
-  if (!section) {
-    throw new NotFoundError("Section not found");
-  }
-
-  if (section.projectId !== params.projectId) {
-    throw new NotFoundError("Section not found in this project");
-  }
+  await verifySectionAccess(authenticatedUser.id, params.projectId, params.sectionId);
 
   const updatedSection = await db.section.update({
     where: { id: params.sectionId },
@@ -145,19 +110,7 @@ type DeleteSectionHandlerProps = {
 
 async function deleteSectionHandler({ user, params }: DeleteSectionHandlerProps) {
   const authenticatedUser = requireAuth(user);
-  await verifyProjectAccess(authenticatedUser.id, params.projectId);
-
-  const section = await db.section.findUnique({
-    where: { id: params.sectionId },
-  });
-
-  if (!section) {
-    throw new NotFoundError("Section not found");
-  }
-
-  if (section.projectId !== params.projectId) {
-    throw new NotFoundError("Section not found in this project");
-  }
+  await verifySectionAccess(authenticatedUser.id, params.projectId, params.sectionId);
 
   await db.section.delete({
     where: { id: params.sectionId },

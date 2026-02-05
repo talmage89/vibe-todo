@@ -2,6 +2,8 @@ import type { Elysia } from "elysia";
 import { ApiError } from "~/platform/auth/errors";
 import { projectRoutes } from "./projects";
 import { sectionRoutes } from "./sections";
+import { subtaskRoutes } from "./subtasks";
+import { tagRoutes } from "./tags";
 import { taskRoutes } from "./tasks";
 import { userRoutes } from "./user";
 
@@ -22,7 +24,9 @@ export const registerApiRoutes = (app: Elysia) => {
       .use(userRoutes)
       .use(projectRoutes)
       .use(sectionRoutes)
-      .use(taskRoutes),
+      .use(taskRoutes)
+      .use(subtaskRoutes)
+      .use(tagRoutes),
   );
 
   return app;
