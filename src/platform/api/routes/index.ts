@@ -1,6 +1,7 @@
 import type { Elysia } from "elysia";
 import { ApiError } from "~/platform/auth/errors";
 import { projectRoutes } from "./projects";
+import { sectionRoutes } from "./sections";
 import { userRoutes } from "./user";
 
 export const registerApiRoutes = (app: Elysia) => {
@@ -18,7 +19,8 @@ export const registerApiRoutes = (app: Elysia) => {
         return { success: false, error: "Internal server error" };
       })
       .use(userRoutes)
-      .use(projectRoutes),
+      .use(projectRoutes)
+      .use(sectionRoutes),
   );
 
   return app;

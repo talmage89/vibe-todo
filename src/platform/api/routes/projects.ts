@@ -57,14 +57,14 @@ async function createProjectHandler({ user, body }: CreateProjectHandlerProps) {
 
 type GetProjectHandlerProps = {
   user: AuthUser | undefined;
-  params: { id: string };
+  params: { projectId: string };
 };
 
 async function getProjectHandler({ user, params }: GetProjectHandlerProps) {
   const authenticatedUser = requireAuth(user);
 
   const project = await db.project.findUnique({
-    where: { id: params.id },
+    where: { id: params.projectId },
   });
 
   if (!project) {
@@ -85,7 +85,7 @@ const updateProjectSchema = z.object({
 
 type UpdateProjectHandlerProps = {
   user: AuthUser | undefined;
-  params: { id: string };
+  params: { projectId: string };
   body: z.infer<typeof updateProjectSchema>;
 };
 
@@ -93,7 +93,7 @@ async function updateProjectHandler({ user, params, body }: UpdateProjectHandler
   const authenticatedUser = requireAuth(user);
 
   const project = await db.project.findUnique({
-    where: { id: params.id },
+    where: { id: params.projectId },
   });
 
   if (!project) {
@@ -109,7 +109,7 @@ async function updateProjectHandler({ user, params, body }: UpdateProjectHandler
   }
 
   const updatedProject = await db.project.update({
-    where: { id: params.id },
+    where: { id: params.projectId },
     data: {
       ...(body.name !== undefined && { name: body.name.trim() }),
       ...(body.color !== undefined && { color: body.color }),
@@ -121,14 +121,14 @@ async function updateProjectHandler({ user, params, body }: UpdateProjectHandler
 
 type DeleteProjectHandlerProps = {
   user: AuthUser | undefined;
-  params: { id: string };
+  params: { projectId: string };
 };
 
 async function deleteProjectHandler({ user, params }: DeleteProjectHandlerProps) {
   const authenticatedUser = requireAuth(user);
 
   const project = await db.project.findUnique({
-    where: { id: params.id },
+    where: { id: params.projectId },
   });
 
   if (!project) {
@@ -140,7 +140,7 @@ async function deleteProjectHandler({ user, params }: DeleteProjectHandlerProps)
   }
 
   await db.project.delete({
-    where: { id: params.id },
+    where: { id: params.projectId },
   });
 
   return { success: true };
@@ -149,11 +149,7 @@ async function deleteProjectHandler({ user, params }: DeleteProjectHandlerProps)
 export const projectRoutes = new Elysia()
   .use(authMiddleware)
   .get("/projects", getProjectsHandler)
-  .get("/projects/:id", getProjectHandler)
-  .post("/projects", createProjectHandler, {
-    body: createProjectSchema,
-  })
-  .patch("/projects/:id", updateProjectHandler, {
-    body: updateProjectSchema,
-  })
-  .delete("/projects/:id", deleteProjectHandler);
+  .get("/projects/:projectId", getProjectHandler)
+  .post("/projects", createProjectHandler, { body: createProjectSchema })
+  .patch("/projects/:projectId", updateProjectHandler, { body: updateProjectSchema })
+  .delete("/projects/:projectId", deleteProjectHandler);
