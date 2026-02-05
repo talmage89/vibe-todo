@@ -23,8 +23,8 @@ function getMeHandler({ user }: { user: AuthUser | undefined }) {
 
 const updateMeSchema = z.object({
   name: z.union([z.string(), z.null()]).optional(),
-  theme: z.nativeEnum(Theme).optional(),
-  defaultView: z.nativeEnum(DefaultView).optional(),
+  theme: z.enum(Theme).optional(),
+  defaultView: z.enum(DefaultView).optional(),
   defaultProjectId: z.union([z.string(), z.null()]).optional(),
 });
 
