@@ -10,6 +10,9 @@ const userSelect = {
   name: true,
   avatar: true,
   createdAt: true,
+  theme: true,
+  defaultView: true,
+  defaultProjectId: true,
 };
 
 export type AuthUser = Prisma.UserGetPayload<{ select: typeof userSelect }>;

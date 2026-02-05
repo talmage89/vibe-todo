@@ -14,9 +14,14 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  email  String  @unique
-  name   String?
-  avatar String?
+  email       String      @unique
+  name        String?
+  avatar      String?
+  theme       Theme       @default(SYSTEM)
+  defaultView DefaultView @default(LIST)
+
+  defaultProjectId String?
+  defaultProject   Project? @relation("DefaultProject", fields: [defaultProjectId], references: [id], onDelete: SetNull)
 
   accounts       Account[]
   sessions       Session[]
@@ -31,6 +36,17 @@ model User {
 enum AccountProvider {
   GOOGLE
   GITHUB
+}
+
+enum Theme {
+  LIGHT
+  DARK
+  SYSTEM
+}
+
+enum DefaultView {
+  LIST
+  KANBAN
 }
 
 model Account {
@@ -84,11 +100,12 @@ model Project {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  collaborations Collaboration[]
-  shareLinks     ShareLink[]
-  sections       Section[]
-  tasks          Task[]
-  tags           Tag[]
+  collaborations  Collaboration[]
+  shareLinks      ShareLink[]
+  sections        Section[]
+  tasks           Task[]
+  tags            Tag[]
+  defaultForUsers User[]          @relation("DefaultProject")
 
   @@index([userId])
   @@map("projects")
