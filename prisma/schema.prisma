@@ -18,6 +18,11 @@ model User {
   name   String?
   avatar String?
 
+  theme            Theme       @default(SYSTEM)
+  defaultView      DefaultView @default(LIST)
+  defaultProjectId String?
+  defaultProject   Project?    @relation("DefaultProject", fields: [defaultProjectId], references: [id], onDelete: SetNull)
+
   accounts       Account[]
   sessions       Session[]
   projects       Project[]
@@ -31,6 +36,17 @@ model User {
 enum AccountProvider {
   GOOGLE
   GITHUB
+}
+
+enum Theme {
+  LIGHT
+  DARK
+  SYSTEM
+}
+
+enum DefaultView {
+  LIST
+  KANBAN
 }
 
 model Account {
@@ -89,6 +105,7 @@ model Project {
   sections       Section[]
   tasks          Task[]
   tags           Tag[]
+  defaultForUsers User[] @relation("DefaultProject")
 
   @@index([userId])
   @@map("projects")

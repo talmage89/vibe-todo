@@ -13,12 +13,18 @@ function getMeHandler({ user }: { user: AuthUser | undefined }) {
       name: authenticatedUser.name,
       avatar: authenticatedUser.avatar,
       createdAt: authenticatedUser.createdAt,
+      theme: authenticatedUser.theme,
+      defaultView: authenticatedUser.defaultView,
+      defaultProjectId: authenticatedUser.defaultProjectId,
     },
   };
 }
 
 const updateMeSchema = z.object({
   name: z.union([z.string(), z.null()]).optional(),
+  theme: z.enum(["LIGHT", "DARK", "SYSTEM"]).optional(),
+  defaultView: z.enum(["LIST", "KANBAN"]).optional(),
+  defaultProjectId: z.union([z.string(), z.null()]).optional(),
 });
 
 type UpdateMeHandlerProps = {
@@ -33,6 +39,9 @@ async function updateMeHandler({ user, body }: UpdateMeHandlerProps) {
     where: { id: authenticatedUser.id },
     data: {
       ...(body.name !== undefined && { name: body.name?.trim() || null }),
+      ...(body.theme !== undefined && { theme: body.theme }),
+      ...(body.defaultView !== undefined && { defaultView: body.defaultView }),
+      ...(body.defaultProjectId !== undefined && { defaultProjectId: body.defaultProjectId }),
     },
   });
 
@@ -44,6 +53,9 @@ async function updateMeHandler({ user, body }: UpdateMeHandlerProps) {
       name: updatedUser.name,
       avatar: updatedUser.avatar,
       createdAt: updatedUser.createdAt,
+      theme: updatedUser.theme,
+      defaultView: updatedUser.defaultView,
+      defaultProjectId: updatedUser.defaultProjectId,
     },
   };
 }
