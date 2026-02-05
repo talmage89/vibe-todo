@@ -2,6 +2,7 @@ import { Elysia } from "elysia";
 import { z } from "zod";
 import { type AuthUser, authMiddleware, requireAuth } from "~/platform/auth/middleware";
 import { db } from "~/platform/db";
+import { DefaultView, Theme } from "~/platform/db/generated";
 
 function getMeHandler({ user }: { user: AuthUser | undefined }) {
   const authenticatedUser = requireAuth(user);
@@ -13,12 +14,18 @@ function getMeHandler({ user }: { user: AuthUser | undefined }) {
       name: authenticatedUser.name,
       avatar: authenticatedUser.avatar,
       createdAt: authenticatedUser.createdAt,
+      theme: authenticatedUser.theme,
+      defaultView: authenticatedUser.defaultView,
+      defaultProjectId: authenticatedUser.defaultProjectId,
     },
   };
 }
 
 const updateMeSchema = z.object({
   name: z.union([z.string(), z.null()]).optional(),
+  theme: z.enum(Theme).optional(),
+  defaultView: z.enum(DefaultView).optional(),
+  defaultProjectId: z.union([z.string(), z.null()]).optional(),
 });
 
 type UpdateMeHandlerProps = {
@@ -33,6 +40,9 @@ async function updateMeHandler({ user, body }: UpdateMeHandlerProps) {
     where: { id: authenticatedUser.id },
     data: {
       ...(body.name !== undefined && { name: body.name?.trim() || null }),
+      ...(body.theme !== undefined && { theme: body.theme }),
+      ...(body.defaultView !== undefined && { defaultView: body.defaultView }),
+      ...(body.defaultProjectId !== undefined && { defaultProjectId: body.defaultProjectId }),
     },
   });
 
@@ -44,6 +54,9 @@ async function updateMeHandler({ user, body }: UpdateMeHandlerProps) {
       name: updatedUser.name,
       avatar: updatedUser.avatar,
       createdAt: updatedUser.createdAt,
+      theme: updatedUser.theme,
+      defaultView: updatedUser.defaultView,
+      defaultProjectId: updatedUser.defaultProjectId,
     },
   };
 }
@@ -92,6 +105,7 @@ async function exportDataHandler({ user }: { user: AuthUser | undefined }) {
           tasks: {
             include: {
               subtasks: true,
+              tags: true,
             },
           },
           tags: true,
@@ -106,6 +120,8 @@ async function exportDataHandler({ user }: { user: AuthUser | undefined }) {
     user: {
       email: userData?.email,
       name: userData?.name,
+      theme: userData?.theme,
+      defaultView: userData?.defaultView,
       createdAt: userData?.createdAt,
     },
     accounts: userData?.accounts,
