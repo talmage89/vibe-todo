@@ -107,7 +107,6 @@ const getGithubOAuthCallbackHandler = (config: OAuthProvider): Handler => {
         return { error: "Authorization failed", details: "Invalid OAuth state" };
       }
 
-      // Clear single-use OAuth cookie regardless of outcome.
       cookie[githubOAuthCookieName]?.set(
         clearOAuthEphemeralCookie({ path: githubOAuthCookiePath }),
       );

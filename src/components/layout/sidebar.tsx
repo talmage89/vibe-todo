@@ -48,30 +48,24 @@ export const Sidebar = ({ isOpen, onClose, onAddTask }: SidebarProps) => {
   const navRef = useRef<HTMLElement>(null);
   const itemRefs = useRef<(HTMLAnchorElement | HTMLButtonElement | null)[]>([]);
 
-  // Build flat list of focusable items for keyboard navigation
   const getFocusableItems = useCallback(() => {
     const items: { type: "nav" | "project" | "action" | "settings"; id: string }[] = [];
 
-    // Quick actions
     if (onAddTask) items.push({ type: "action", id: "add-task" });
     items.push({ type: "action", id: "add-project" });
 
-    // Navigation items
     for (const item of navItems) {
       items.push({ type: "nav", id: item.path });
     }
 
-    // Projects header toggle
     items.push({ type: "action", id: "projects-toggle" });
 
-    // Project items (only if expanded)
     if (projectsExpanded) {
       for (const project of projects) {
         items.push({ type: "project", id: project.id });
       }
     }
 
-    // Settings
     items.push({ type: "settings", id: "settings" });
 
     return items;
@@ -118,14 +112,12 @@ export const Sidebar = ({ isOpen, onClose, onAddTask }: SidebarProps) => {
     [focusedIndex, getFocusableItems, onClose],
   );
 
-  // Reset focus index when sidebar closes
   useEffect(() => {
     if (!isOpen) {
       setFocusedIndex(-1);
     }
   }, [isOpen]);
 
-  // Store ref at given index
   const setItemRef = useCallback(
     (index: number, el: HTMLAnchorElement | HTMLButtonElement | null) => {
       itemRefs.current[index] = el;
@@ -137,7 +129,6 @@ export const Sidebar = ({ isOpen, onClose, onAddTask }: SidebarProps) => {
 
   return (
     <>
-      {/* Mobile overlay */}
       {isOpen && (
         <div
           className="fixed inset-0 z-40 bg-primary/20 lg:hidden"
@@ -146,14 +137,12 @@ export const Sidebar = ({ isOpen, onClose, onAddTask }: SidebarProps) => {
         />
       )}
 
-      {/* Sidebar */}
       <aside
         className={cn(
           "fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-border border-r bg-surface transition-transform duration-150 ease-out lg:static lg:translate-x-0",
           isOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
-        {/* Logo/Brand */}
         <div className="flex h-14 items-center justify-between border-border border-b px-4">
           <Link to="/" className="font-semibold text-lg text-primary">
             Todo
@@ -169,7 +158,6 @@ export const Sidebar = ({ isOpen, onClose, onAddTask }: SidebarProps) => {
           </Button>
         </div>
 
-        {/* Navigation */}
         <nav
           ref={navRef}
           className="flex-1 overflow-y-auto p-3"
@@ -177,7 +165,6 @@ export const Sidebar = ({ isOpen, onClose, onAddTask }: SidebarProps) => {
           role="navigation"
           aria-label="Main navigation"
         >
-          {/* Quick actions */}
           <div className="mb-4 flex gap-2">
             {onAddTask && (
               <Button
@@ -203,7 +190,6 @@ export const Sidebar = ({ isOpen, onClose, onAddTask }: SidebarProps) => {
             </Button>
           </div>
 
-          {/* Main navigation */}
           <ul className="space-y-1" role="list">
             {navItems.map((item) => {
               const isActive = currentPath === item.path;
@@ -232,7 +218,6 @@ export const Sidebar = ({ isOpen, onClose, onAddTask }: SidebarProps) => {
             })}
           </ul>
 
-          {/* Projects section */}
           <div className="mt-6">
             <button
               ref={(el) => setItemRef(refIndex++, el)}
@@ -299,7 +284,6 @@ export const Sidebar = ({ isOpen, onClose, onAddTask }: SidebarProps) => {
           </div>
         </nav>
 
-        {/* Sidebar footer */}
         <div className="border-border border-t p-3">
           <Link
             ref={(el) => setItemRef(refIndex++, el)}

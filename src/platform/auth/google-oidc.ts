@@ -15,8 +15,6 @@ export type GoogleIdTokenClaims = {
 
 const googleIssuers = ["https://accounts.google.com", "accounts.google.com"];
 
-// Google OpenID Connect discovery doc points jwks_uri here:
-// https://www.googleapis.com/oauth2/v3/certs
 const googleJwks = createRemoteJWKSet(new URL("https://www.googleapis.com/oauth2/v3/certs"));
 
 export const verifyGoogleIdToken = async (options: {

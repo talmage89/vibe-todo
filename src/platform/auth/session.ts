@@ -6,9 +6,6 @@ import { Time, toSeconds } from "~/platform/utils/time";
 const SESSION_COOKIE_NAME = "session";
 const SESSION_MAX_AGE = Time.ONE_MONTH;
 
-/**
- * Creates a new database-backed session and returns the cookie configuration.
- */
 export const createSession = async (
   userId: string,
   options?: { userAgent?: string; ipAddress?: string },
@@ -37,10 +34,6 @@ export const createSession = async (
   };
 };
 
-/**
- * Validates a session token and returns the userId if valid.
- * Returns null if the session is invalid or expired.
- */
 export const validateSession = async (token: string | undefined): Promise<string | null> => {
   if (!token) return null;
 
@@ -51,7 +44,6 @@ export const validateSession = async (token: string | undefined): Promise<string
 
   if (!session) return null;
   if (session.expiresAt < new Date()) {
-    // Clean up expired session
     await db.session.delete({ where: { token } }).catch(() => {});
     return null;
   }
@@ -59,24 +51,15 @@ export const validateSession = async (token: string | undefined): Promise<string
   return session.userId;
 };
 
-/**
- * Deletes a session by token (logout).
- */
 export const deleteSession = async (token: string | undefined): Promise<void> => {
   if (!token) return;
   await db.session.delete({ where: { token } }).catch(() => {});
 };
 
-/**
- * Deletes all sessions for a user (logout from all devices).
- */
 export const deleteAllUserSessions = async (userId: string): Promise<void> => {
   await db.session.deleteMany({ where: { userId } });
 };
 
-/**
- * Creates a cookie configuration that clears the session.
- */
 export const clearSessionCookie = (): ElysiaCookie => {
   return {
     value: "",
@@ -88,9 +71,6 @@ export const clearSessionCookie = (): ElysiaCookie => {
   };
 };
 
-/**
- * Generates a cryptographically secure session token.
- */
 const generateSessionToken = (): string => {
   return randomBytes(32).toString("base64url");
 };

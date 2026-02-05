@@ -4,7 +4,6 @@ const envSchema = z.object({
   PORT: z.string().transform(Number),
   DB_URL: z.string(),
 
-  // OAuth Configuration
   GOOGLE_CLIENT_ID: z.string(),
   GOOGLE_CLIENT_SECRET: z.string(),
   GOOGLE_REDIRECT_URI: z.string().url(),
@@ -13,7 +12,6 @@ const envSchema = z.object({
   GITHUB_CLIENT_SECRET: z.string(),
   GITHUB_REDIRECT_URI: z.string().url(),
 
-  // Session Configuration
   SESSION_SECRET: z.string().min(32),
 });
 

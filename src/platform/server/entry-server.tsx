@@ -21,10 +21,8 @@ registerGoogleOAuth(app);
 registerGithubOAuth(app);
 registerLogout(app);
 
-// Register protected API routes
 registerApiRoutes(app);
 
-// Inline script to prevent flash of wrong theme (runs before CSS loads)
 const themeScript = `(function(){try{var t=localStorage.getItem('theme');var s=t==='system'||!t?window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light':t;document.documentElement.classList.add(s)}catch(e){}})();`;
 
 const HTML = (children: React.ReactNode) => (

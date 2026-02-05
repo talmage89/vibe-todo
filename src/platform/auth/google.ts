@@ -30,7 +30,7 @@ interface GoogleTokenResponse {
 
 const googleOAuthCookieName = "oauth_google";
 const googleOAuthCookiePath = "/auth/google/callback";
-const googleOAuthCookieMaxAgeSeconds = 10 * 60; // 10 minutes
+const googleOAuthCookieMaxAgeSeconds = 10 * 60;
 
 export const registerGoogleOAuth = (app: Elysia) => {
   const config = getGoogleConfig();
@@ -72,13 +72,11 @@ const buildGoogleOAuthUrl = (
     response_type: "code",
     scope: config.scopes.join(" "),
     access_type: "offline",
-    // Don't force re-consent every login; only request it when truly needed.
     prompt: "select_account",
     include_granted_scopes: "true",
     state: oauth.state,
     code_challenge: oauth.codeChallenge,
     code_challenge_method: "S256",
-    // OpenID Connect replay protection.
     nonce: oauth.nonce,
   });
 
@@ -115,7 +113,6 @@ const getGoogleOAuthCallbackHandler = (config: OAuthProvider): Handler => {
         return { error: "Authorization failed", details: "Invalid OAuth state" };
       }
 
-      // Clear single-use OAuth cookie regardless of outcome.
       cookie[googleOAuthCookieName]?.set(
         clearOAuthEphemeralCookie({ path: googleOAuthCookiePath }),
       );
@@ -195,7 +192,6 @@ const getGoogleOAuthData = async (
     throw new Error("Google ID token missing email");
   }
 
-  // Prefer ID token for identity; userinfo is an optional enrichment.
   let userInfo: GoogleUserInfo = {
     sub: idTokenClaims.sub,
     email: idTokenClaims.email,

@@ -21,10 +21,6 @@ interface EmptyStateProps {
   children?: ReactNode;
 }
 
-/**
- * Generic empty state component.
- * Use for displaying placeholder content when no data is available.
- */
 export const EmptyState = ({
   icon: Icon,
   title,
@@ -57,9 +53,6 @@ export const EmptyState = ({
   );
 };
 
-/**
- * Empty state for when there are no tasks.
- */
 export const EmptyTasks = ({
   onAddTask,
   className,
@@ -85,9 +78,6 @@ export const EmptyTasks = ({
   );
 };
 
-/**
- * Empty state for when there are no projects.
- */
 export const EmptyProjects = ({
   onAddProject,
   className,
@@ -113,9 +103,6 @@ export const EmptyProjects = ({
   );
 };
 
-/**
- * Empty state for when a search returns no results.
- */
 export const EmptySearchResults = ({
   query,
   onClear,
@@ -144,9 +131,6 @@ export const EmptySearchResults = ({
   );
 };
 
-/**
- * Empty state for when a list has been filtered to nothing.
- */
 export const EmptyFiltered = ({
   onClearFilters,
   className,

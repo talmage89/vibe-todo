@@ -1,7 +1,3 @@
-/**
- * Login page with OAuth provider buttons.
- * Users are redirected here when accessing protected routes while unauthenticated.
- */
 import { buttonVariants } from "~/components/ui/button";
 import { cn } from "~/components/ui/cn";
 import { GitHubLogo, GoogleLogo } from "~/features/auth/oauth-icons";

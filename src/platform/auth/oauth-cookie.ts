@@ -10,7 +10,6 @@ export const createOAuthEphemeralCookie = (options: {
   return {
     value: options.value,
     httpOnly: true,
-    // Must be Lax so the cookie is sent on the provider -> callback top-level redirect.
     sameSite: "lax",
     path: options.path,
     secure,
