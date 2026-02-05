@@ -178,7 +178,7 @@ export function SectionItem({
               <EllipsisHorizontalIcon className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" onCloseAutoFocus={(e) => e.preventDefault()}>
             <DropdownMenuItem onClick={handleStartEdit}>
               <PencilIcon className="h-4 w-4" />
               Rename
