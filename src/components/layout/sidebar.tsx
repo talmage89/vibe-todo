@@ -247,13 +247,13 @@ export const Sidebar = ({ isOpen, onClose, onAddTask }: SidebarProps) => {
                   <li className="px-3 py-2 text-secondary text-sm">No projects yet</li>
                 ) : (
                   projects.map((project) => {
-                    const isActive = currentPath === `/projects/${project.id}`;
+                    const isActive = currentPath === `/project/${project.id}`;
                     const currentRefIndex = refIndex++;
                     return (
                       <li key={project.id}>
                         <Link
                           ref={(el) => setItemRef(currentRefIndex, el)}
-                          to={`/projects/${project.id}`}
+                          to={`/project/${project.id}`}
                           className={cn(
                             "flex items-center gap-3 rounded px-3 py-2 font-medium text-sm transition-colors",
                             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2",

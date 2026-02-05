@@ -3,10 +3,10 @@ import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
-import { ColorPicker } from "~/components/ui/color-picker";
 import { ConfirmDialog } from "~/components/ui/confirm-dialog";
 import { Input } from "~/components/ui/input";
 import { useToast } from "~/components/ui/toast";
+import { ColorPicker } from "~/features/projects/components/color-picker";
 
 interface Project {
   id: string;
@@ -190,7 +190,7 @@ export function ProjectSettings() {
 
             <div className="space-y-2">
               <label className="font-medium text-primary text-sm">Color</label>
-              <ColorPicker value={color} onChange={setColor} />
+              <ColorPicker value={color ?? undefined} onChange={setColor} />
             </div>
 
             <div className="flex gap-2 pt-2">
