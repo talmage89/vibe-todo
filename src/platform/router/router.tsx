@@ -11,6 +11,7 @@ import { Login } from "~/features/auth/login";
 import { ProjectSettings } from "~/features/project/project-settings";
 import { ProjectView } from "~/features/project/project-view";
 import { Settings } from "~/features/settings/settings";
+import { isSettingsSection, type SettingsSearch } from "~/features/settings/types";
 import { Tmp } from "~/features/tmp";
 import { ProtectedRoute } from "~/platform/auth/protected-route";
 
@@ -65,17 +66,11 @@ const ProjectSettingsRoute = createRoute({
   ),
 });
 
-type SettingsSection = "profile" | "preferences" | "shortcuts" | "data" | "accounts";
-
-interface SettingsSearch {
-  section?: SettingsSection;
-}
-
 const SettingsRoute = createRoute({
   getParentRoute: () => RootRoute,
   path: "/settings",
   validateSearch: (search: Record<string, unknown>): SettingsSearch => ({
-    section: (search.section as SettingsSection) || undefined,
+    section: isSettingsSection(search.section) ? search.section : undefined,
   }),
   component: () => (
     <ProtectedRoute>

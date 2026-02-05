@@ -2,6 +2,12 @@ import { createContext, useCallback, useEffect, useMemo, useState } from "react"
 
 export type Theme = "light" | "dark" | "system";
 
+const THEMES = ["light", "dark", "system"] as const;
+
+export function isTheme(value: unknown): value is Theme {
+  return typeof value === "string" && THEMES.includes(value as Theme);
+}
+
 interface ThemeContextValue {
   theme: Theme;
   resolvedTheme: "light" | "dark";
