@@ -1,4 +1,20 @@
-import { CheckIcon, PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
+import {
+  closestCenter,
+  DndContext,
+  type DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { Bars3Icon, CheckIcon, PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { type KeyboardEvent, useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/components/ui/cn";
@@ -13,6 +29,7 @@ interface SubtaskListProps {
     updates: Partial<Pick<Subtask, "title" | "completed">>,
   ) => Promise<Subtask>;
   onDeleteSubtask: (subtaskId: string) => Promise<void>;
+  onReorderSubtasks: (subtaskIds: string[]) => Promise<void>;
 }
 
 export function SubtaskList({
@@ -20,10 +37,22 @@ export function SubtaskList({
   onCreateSubtask,
   onUpdateSubtask,
   onDeleteSubtask,
+  onReorderSubtasks,
 }: SubtaskListProps) {
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
   const [creating, setCreating] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
 
   const completedCount = subtasks.filter((s) => s.completed).length;
   const totalCount = subtasks.length;
@@ -52,6 +81,27 @@ export function SubtaskList({
     [handleCreate],
   );
 
+  const handleDragEnd = useCallback(
+    async (event: DragEndEvent) => {
+      const { active, over } = event;
+
+      if (over && active.id !== over.id) {
+        const oldIndex = subtasks.findIndex((s) => s.id === active.id);
+        const newIndex = subtasks.findIndex((s) => s.id === over.id);
+
+        if (oldIndex === -1 || newIndex === -1) return;
+
+        const newOrder = [...subtasks];
+        const [removed] = newOrder.splice(oldIndex, 1);
+        if (!removed) return;
+        newOrder.splice(newIndex, 0, removed);
+
+        await onReorderSubtasks(newOrder.map((s) => s.id));
+      }
+    },
+    [subtasks, onReorderSubtasks],
+  );
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
@@ -66,16 +116,20 @@ export function SubtaskList({
       </div>
 
       {subtasks.length > 0 && (
-        <div className="space-y-1">
-          {subtasks.map((subtask) => (
-            <SubtaskItem
-              key={subtask.id}
-              subtask={subtask}
-              onUpdate={(updates) => onUpdateSubtask(subtask.id, updates)}
-              onDelete={() => onDeleteSubtask(subtask.id)}
-            />
-          ))}
-        </div>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={subtasks.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+            <div className="space-y-1">
+              {subtasks.map((subtask) => (
+                <SubtaskItem
+                  key={subtask.id}
+                  subtask={subtask}
+                  onUpdate={(updates) => onUpdateSubtask(subtask.id, updates)}
+                  onDelete={() => onDeleteSubtask(subtask.id)}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
       )}
 
       <div className="flex items-center gap-2">
@@ -113,6 +167,15 @@ function SubtaskItem({ subtask, onUpdate, onDelete }: SubtaskItemProps) {
   const [editTitle, setEditTitle] = useState(subtask.title);
   const [saving, setSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: subtask.id,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
 
   useEffect(() => {
     setEditTitle(subtask.title);
@@ -161,7 +224,23 @@ function SubtaskItem({ subtask, onUpdate, onDelete }: SubtaskItemProps) {
   );
 
   return (
-    <div className="group flex items-center gap-2 rounded px-2 py-1 hover:bg-surface">
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "group flex items-center gap-2 rounded px-2 py-1",
+        isDragging ? "opacity-50" : "hover:bg-surface",
+      )}
+    >
+      <button
+        type="button"
+        className="cursor-grab touch-none rounded p-0.5 text-secondary opacity-0 transition-opacity hover:text-primary group-hover:opacity-100"
+        {...attributes}
+        {...listeners}
+      >
+        <Bars3Icon className="h-3.5 w-3.5" />
+      </button>
+
       <button
         type="button"
         onClick={handleToggle}

@@ -235,6 +235,35 @@ export function useTask(projectId: string, taskId: string | null) {
     [projectId, taskId],
   );
 
+  const reorderSubtasks = useCallback(
+    async (subtaskIds: string[]) => {
+      if (!taskId) {
+        throw new Error("No task selected");
+      }
+
+      const response = await fetch(`/api/projects/${projectId}/tasks/${taskId}/subtasks/reorder`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subtaskIds }),
+      });
+
+      const data: { subtasks: Subtask[] } = await response.json();
+
+      if (!response.ok) {
+        throw new Error("Failed to reorder subtasks");
+      }
+
+      setTask((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          subtasks: data.subtasks,
+        };
+      });
+    },
+    [projectId, taskId],
+  );
+
   return {
     task,
     loading,
@@ -244,6 +273,7 @@ export function useTask(projectId: string, taskId: string | null) {
     createSubtask,
     updateSubtask,
     deleteSubtask,
+    reorderSubtasks,
     refetch: fetchTask,
   };
 }
