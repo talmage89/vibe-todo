@@ -1,11 +1,11 @@
 import { useSearch } from "@tanstack/react-router";
-import { ConnectedAccountsSection } from "./components/connected-accounts-section";
-import { DataSection } from "./components/data-section";
-import { PreferencesSection } from "./components/preferences-section";
-import { ProfileSection } from "./components/profile-section";
-import { SettingsNav } from "./components/settings-nav";
-import { ShortcutsSection } from "./components/shortcuts-section";
-import { isSettingsSection, type SettingsSection } from "./types";
+import { isSettingsSection, type SettingsSection } from "../types";
+import { ConnectedAccountsSection } from "./connected-accounts-section";
+import { DataSection } from "./data-section";
+import { PreferencesSection } from "./preferences-section";
+import { ProfileSection } from "./profile-section";
+import { SettingsNav } from "./settings-nav";
+import { ShortcutsSection } from "./shortcuts-section";
 
 function getSection(search: { section?: unknown }): SettingsSection {
   if (isSettingsSection(search.section)) {

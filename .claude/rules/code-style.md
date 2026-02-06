@@ -6,3 +6,21 @@
 - Do NOT use barrel exports. These cause tree-shaking problems and client/server bundling conflicts.
 - Do NOT add unnecessary comments to code. Code should be self-documenting. Avoid JSDoc comments, inline comments, and section markers unless absolutely necessary for complex logic that cannot be made clear through naming alone.
 - Code MUST pass all formatting and typecheck issues, even if unrelated to your code. If you encounter a type error, ensure `bun install` and `bunx prisma generate` have been run.
+
+## Feature directory convention
+
+Each feature in `src/features/` follows a consistent structure:
+
+```
+features/<name>/
+  components/    # UI components (React)
+  hooks/         # Custom React hooks (data fetching, state)
+  types.ts       # Feature-specific type definitions
+  constants.ts   # Feature-specific constants
+```
+
+- All React components live in `components/`, including page-level views.
+- All hooks live in `hooks/`.
+- `types.ts` and `constants.ts` live at the feature root.
+- Use plural feature names (`projects/`, `tasks/`, `sections/`).
+- Cross-feature imports use absolute `~/` paths. Within-feature imports use relative paths.

@@ -1,6 +1,6 @@
 import { buttonVariants } from "~/components/ui/button";
 import { cn } from "~/components/ui/cn";
-import { GitHubLogo, GoogleLogo } from "~/features/auth/oauth-icons";
+import { GitHubLogo, GoogleLogo } from "./oauth-icons";
 
 export const Login = () => {
   return (
