@@ -40,6 +40,7 @@ interface TaskDetailModalProps {
     updates: Partial<Pick<Subtask, "title" | "completed">>,
   ) => Promise<Subtask>;
   onDeleteSubtask: (subtaskId: string) => Promise<void>;
+  onReorderSubtasks: (subtaskIds: string[]) => Promise<void>;
 }
 
 const PRIORITY_OPTIONS: { value: TaskPriority; label: string }[] = [
@@ -66,6 +67,7 @@ export function TaskDetailModal({
   onCreateSubtask,
   onUpdateSubtask,
   onDeleteSubtask,
+  onReorderSubtasks,
 }: TaskDetailModalProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -155,6 +157,7 @@ export function TaskDetailModal({
                   onCreateSubtask={onCreateSubtask}
                   onUpdateSubtask={onUpdateSubtask}
                   onDeleteSubtask={onDeleteSubtask}
+                  onReorderSubtasks={onReorderSubtasks}
                 />
 
                 <ActivityLog />
