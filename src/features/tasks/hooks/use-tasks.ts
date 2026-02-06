@@ -1,41 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import type { TaskPriority, TaskStatus } from "~/platform/db/generated";
-
-export interface Tag {
-  id: string;
-  name: string;
-  color: string;
-}
-
-export interface Subtask {
-  id: string;
-  title: string;
-  completed: boolean;
-  position: number;
-}
-
-export interface Task {
-  id: string;
-  title: string;
-  description: string | null;
-  dueDate: string | null;
-  priority: TaskPriority;
-  status: TaskStatus;
-  position: number;
-  sectionId: string | null;
-  subtasks: Subtask[];
-  tags: Tag[];
-}
-
-export interface CreateTaskData {
-  title: string;
-  description?: string;
-  dueDate?: Date;
-  priority?: TaskPriority;
-  status?: TaskStatus;
-  sectionId?: string | null;
-  tagIds?: string[];
-}
+import type { CreateTaskData, Task } from "~/types/models";
 
 export function useTasks(projectId: string, sectionId?: string | null) {
   const [tasks, setTasks] = useState<Task[]>([]);

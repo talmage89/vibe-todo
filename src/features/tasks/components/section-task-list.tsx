@@ -1,5 +1,4 @@
-import type { TaskStatus } from "~/platform/db/generated";
-import type { Task } from "../hooks/use-tasks";
+import type { Task, TaskStatus } from "~/types/models";
 import { TaskListItem } from "./task-list-item";
 import { TaskQuickAdd } from "./task-quick-add";
 

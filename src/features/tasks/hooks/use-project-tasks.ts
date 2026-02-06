@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { TaskStatus } from "~/platform/db/generated";
-import type { CreateTaskData, Task } from "./use-tasks";
+import type { CreateTaskData, Task, TaskStatus } from "~/types/models";
 
 export function useProjectTasks(projectId: string) {
   const [tasks, setTasks] = useState<Task[]>([]);

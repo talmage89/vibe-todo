@@ -1,12 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-
-export interface Project {
-  id: string;
-  name: string;
-  color: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
+import type { Project } from "~/types/models";
 
 interface UseProjectsResult {
   projects: Project[];

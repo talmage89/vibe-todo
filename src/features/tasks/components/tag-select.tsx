@@ -1,7 +1,7 @@
 import { CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useCallback, useState } from "react";
 import { cn } from "~/components/ui/cn";
-import type { Tag } from "../hooks/use-task";
+import type { Tag } from "~/types/models";
 
 interface TagSelectProps {
   tags: Tag[];

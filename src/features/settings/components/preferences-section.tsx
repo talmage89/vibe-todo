@@ -12,11 +12,7 @@ import { useToast } from "~/components/ui/toast";
 import { useAuth } from "~/platform/auth/use-auth";
 import { DefaultView, Theme } from "~/platform/db/generated";
 import { useTheme } from "~/platform/theme/use-theme";
-
-interface Project {
-  id: string;
-  name: string;
-}
+import type { Project } from "~/types/models";
 
 const themeOptions: { value: Theme; label: string }[] = [
   { value: Theme.SYSTEM, label: "System" },

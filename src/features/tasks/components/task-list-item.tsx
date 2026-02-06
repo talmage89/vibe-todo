@@ -2,8 +2,8 @@ import { CalendarIcon, CheckCircleIcon } from "@heroicons/react/24/outline";
 import { CheckCircleIcon as CheckCircleSolidIcon } from "@heroicons/react/24/solid";
 import { useCallback, useState } from "react";
 import { cn } from "~/components/ui/cn";
-import { TaskPriority, TaskStatus } from "~/platform/db/generated";
-import type { Task } from "../hooks/use-tasks";
+import type { Task } from "~/types/models";
+import { TaskPriority, TaskStatus } from "~/types/models";
 
 interface TaskListItemProps {
   task: Task;
