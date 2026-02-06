@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import type { Subtask, Task, TaskUpdates } from "~/types/models";
+import type { Subtask, Task, TaskUpdates } from "../types";
 
 interface TaskResponse {
   task: Task;

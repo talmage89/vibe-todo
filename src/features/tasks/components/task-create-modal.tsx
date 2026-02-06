@@ -11,8 +11,8 @@ import {
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
-import type { CreateTaskData, Tag } from "~/types/models";
-import { TaskPriority } from "~/types/models";
+import type { CreateTaskData, Tag } from "../types";
+import { TaskPriority } from "../types";
 import { PrioritySelect } from "./priority-select";
 import { TagSelect } from "./tag-select";
 

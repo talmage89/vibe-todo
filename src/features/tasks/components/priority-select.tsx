@@ -5,7 +5,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { TaskPriority } from "~/types/models";
+import { TaskPriority } from "../types";
 
 interface PrioritySelectProps {
   value: TaskPriority;

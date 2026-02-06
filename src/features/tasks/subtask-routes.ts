@@ -1,8 +1,8 @@
 import { Elysia } from "elysia";
 import { z } from "zod";
 import { verifySubtaskAccess, verifyTaskAccess } from "~/platform/api/access";
-import * as subtaskService from "~/platform/api/services/subtask-service";
 import { type AuthUser, authMiddleware, requireAuth } from "~/platform/auth/middleware";
+import * as subtaskService from "./subtask-service";
 
 const createSubtaskSchema = z.object({
   title: z

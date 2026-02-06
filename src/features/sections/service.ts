@@ -1,5 +1,5 @@
+import { getNextSectionPosition, reorderSections } from "~/platform/api/position";
 import { db } from "~/platform/db";
-import { getNextSectionPosition, reorderSections } from "./position";
 
 export async function listSections(projectId: string) {
   return db.section.findMany({

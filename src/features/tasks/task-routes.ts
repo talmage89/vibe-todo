@@ -1,9 +1,9 @@
 import { Elysia } from "elysia";
 import { z } from "zod";
 import { verifyProjectAccess, verifyTaskAccess } from "~/platform/api/access";
-import * as taskService from "~/platform/api/services/task-service";
 import { type AuthUser, authMiddleware, requireAuth } from "~/platform/auth/middleware";
 import { TaskPriority, TaskStatus } from "~/platform/db/generated";
+import * as taskService from "./task-service";
 
 const getTasksQuerySchema = z.object({
   sectionId: z.string().optional(),

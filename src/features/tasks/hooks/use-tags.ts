@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import type { Tag } from "~/types/models";
+import type { Tag } from "../types";
 
 export function useTags(projectId: string) {
   const [tags, setTags] = useState<Tag[]>([]);

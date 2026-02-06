@@ -1,10 +1,10 @@
 import { Elysia } from "elysia";
 import type { Cookie } from "elysia/cookies";
 import { z } from "zod";
-import * as userService from "~/platform/api/services/user-service";
 import { type AuthUser, authMiddleware, requireAuth } from "~/platform/auth/middleware";
 import { clearSessionCookie, SESSION_COOKIE_NAME } from "~/platform/auth/session";
 import { DefaultView, Theme } from "~/platform/db/generated";
+import * as userService from "./service";
 
 function getMeHandler({ user }: { user: AuthUser | undefined }) {
   const authenticatedUser = requireAuth(user);

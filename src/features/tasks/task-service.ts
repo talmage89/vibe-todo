@@ -1,7 +1,7 @@
+import { getNextTaskPosition, reorderTasks } from "~/platform/api/position";
 import { ValidationError } from "~/platform/auth/errors";
 import { db } from "~/platform/db";
 import { TaskPriority, TaskStatus } from "~/platform/db/generated";
-import { getNextTaskPosition, reorderTasks } from "./position";
 
 type CreateTaskData = {
   title: string;

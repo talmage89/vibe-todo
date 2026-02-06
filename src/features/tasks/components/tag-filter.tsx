@@ -1,7 +1,7 @@
 import { FunnelIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useCallback, useState } from "react";
 import { cn } from "~/components/ui/cn";
-import type { Tag } from "~/types/models";
+import type { Tag } from "../types";
 
 interface TagFilterProps {
   tags: Tag[];
