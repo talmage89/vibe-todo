@@ -7,6 +7,8 @@ import { ConfirmDialog } from "~/components/ui/confirm-dialog";
 import { Input } from "~/components/ui/input";
 import { useToast } from "~/components/ui/toast";
 import { ColorPicker } from "~/features/projects/components/color-picker";
+import { TagManager } from "~/features/tasks/components/tag-manager";
+import { useTags } from "~/features/tasks/hooks/use-tags";
 
 interface Project {
   id: string;
@@ -32,6 +34,8 @@ export function ProjectSettings() {
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  const { tags, loading: tagsLoading, createTag, updateTag, deleteTag } = useTags(projectId);
 
   const fetchProject = useCallback(async () => {
     try {
@@ -207,6 +211,22 @@ export function ProjectSettings() {
                 </Button>
               )}
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Tags</CardTitle>
+            <CardDescription>Create and manage tags for this project.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <TagManager
+              tags={tags}
+              loading={tagsLoading}
+              onCreateTag={createTag}
+              onUpdateTag={updateTag}
+              onDeleteTag={deleteTag}
+            />
           </CardContent>
         </Card>
 

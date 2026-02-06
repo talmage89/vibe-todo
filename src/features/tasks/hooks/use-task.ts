@@ -95,7 +95,9 @@ export function useTask(projectId: string, taskId: string | null) {
 
   const updateTask = useCallback(
     async (
-      updates: Partial<Pick<Task, "title" | "description" | "dueDate" | "priority" | "status">>,
+      updates: Partial<Pick<Task, "title" | "description" | "dueDate" | "priority" | "status">> & {
+        tagIds?: string[];
+      },
     ): Promise<Task> => {
       if (!taskId) {
         throw new Error("No task selected");

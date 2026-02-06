@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { SectionList } from "~/features/sections/components/section-list";
 import { useSections } from "~/features/sections/hooks/use-sections";
+import { TagFilter } from "~/features/tasks/components/tag-filter";
+import { useTags } from "~/features/tasks/hooks/use-tags";
 
 interface Project {
   id: string;
@@ -27,6 +29,9 @@ export function ProjectView() {
     deleteSection,
     reorderSections,
   } = useSections(projectId);
+
+  const { tags } = useTags(projectId);
+  const [filterTagIds, setFilterTagIds] = useState<string[]>([]);
 
   const fetchProject = useCallback(async () => {
     try {
@@ -77,25 +82,32 @@ export function ProjectView() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center justify-between border-border border-b px-6 py-4">
-        <div className="flex items-center gap-3">
-          {project.color && (
-            <span
-              className="h-3 w-3 shrink-0 rounded-full"
-              style={{ backgroundColor: project.color }}
-              aria-hidden="true"
-            />
-          )}
-          <h1 className="font-semibold text-lg text-primary">{project.name}</h1>
+      <header className="border-border border-b">
+        <div className="flex items-center justify-between px-6 py-4">
+          <div className="flex items-center gap-3">
+            {project.color && (
+              <span
+                className="h-3 w-3 shrink-0 rounded-full"
+                style={{ backgroundColor: project.color }}
+                aria-hidden="true"
+              />
+            )}
+            <h1 className="font-semibold text-lg text-primary">{project.name}</h1>
+          </div>
+          <Link
+            to="/project/$projectId/settings"
+            params={{ projectId }}
+            className="rounded p-1.5 text-secondary transition-colors hover:bg-surface hover:text-primary"
+            title="Project settings"
+          >
+            <Cog6ToothIcon className="h-5 w-5" />
+          </Link>
         </div>
-        <Link
-          to="/project/$projectId/settings"
-          params={{ projectId }}
-          className="rounded p-1.5 text-secondary transition-colors hover:bg-surface hover:text-primary"
-          title="Project settings"
-        >
-          <Cog6ToothIcon className="h-5 w-5" />
-        </Link>
+        {tags.length > 0 && (
+          <div className="border-border border-t px-6 py-2">
+            <TagFilter tags={tags} selectedTagIds={filterTagIds} onChange={setFilterTagIds} />
+          </div>
+        )}
       </header>
       <main className="flex-1 overflow-y-auto p-6">
         {sectionsLoading ? (
