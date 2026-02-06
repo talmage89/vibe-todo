@@ -1,9 +1,8 @@
 import { Elysia } from "elysia";
 import { z } from "zod";
 import { verifyProjectAccess, verifyTagAccess } from "~/platform/api/access";
-import { ValidationError } from "~/platform/auth/errors";
+import * as tagService from "~/platform/api/services/tag-service";
 import { type AuthUser, authMiddleware, requireAuth } from "~/platform/auth/middleware";
-import { db } from "~/platform/db";
 
 const createTagSchema = z.object({
   name: z
@@ -23,28 +22,7 @@ type CreateTagHandlerProps = {
 async function createTagHandler({ user, params, body }: CreateTagHandlerProps) {
   const authenticatedUser = requireAuth(user);
   await verifyProjectAccess(authenticatedUser.id, params.projectId);
-
-  const existingTag = await db.tag.findUnique({
-    where: {
-      name_projectId: {
-        name: body.name,
-        projectId: params.projectId,
-      },
-    },
-  });
-
-  if (existingTag) {
-    throw new ValidationError("A tag with this name already exists in this project");
-  }
-
-  const tag = await db.tag.create({
-    data: {
-      name: body.name,
-      color: body.color,
-      projectId: params.projectId,
-    },
-  });
-
+  const tag = await tagService.createTag(params.projectId, body.name, body.color);
   return { success: true, tag };
 }
 
@@ -56,12 +34,7 @@ type GetTagsHandlerProps = {
 async function getTagsHandler({ user, params }: GetTagsHandlerProps) {
   const authenticatedUser = requireAuth(user);
   await verifyProjectAccess(authenticatedUser.id, params.projectId);
-
-  const tags = await db.tag.findMany({
-    where: { projectId: params.projectId },
-    orderBy: { name: "asc" },
-  });
-
+  const tags = await tagService.listTags(params.projectId);
   return { success: true, tags };
 }
 
@@ -87,30 +60,7 @@ type UpdateTagHandlerProps = {
 async function updateTagHandler({ user, params, body }: UpdateTagHandlerProps) {
   const authenticatedUser = requireAuth(user);
   const tag = await verifyTagAccess(authenticatedUser.id, params.projectId, params.tagId);
-
-  if (body.name !== undefined && body.name !== tag.name) {
-    const existingTag = await db.tag.findUnique({
-      where: {
-        name_projectId: {
-          name: body.name,
-          projectId: params.projectId,
-        },
-      },
-    });
-
-    if (existingTag) {
-      throw new ValidationError("A tag with this name already exists in this project");
-    }
-  }
-
-  const updatedTag = await db.tag.update({
-    where: { id: params.tagId },
-    data: {
-      ...(body.name !== undefined && { name: body.name }),
-      ...(body.color !== undefined && { color: body.color }),
-    },
-  });
-
+  const updatedTag = await tagService.updateTag(params.projectId, params.tagId, tag.name, body);
   return { success: true, tag: updatedTag };
 }
 
@@ -122,11 +72,7 @@ type DeleteTagHandlerProps = {
 async function deleteTagHandler({ user, params }: DeleteTagHandlerProps) {
   const authenticatedUser = requireAuth(user);
   await verifyTagAccess(authenticatedUser.id, params.projectId, params.tagId);
-
-  await db.tag.delete({
-    where: { id: params.tagId },
-  });
-
+  await tagService.deleteTag(params.tagId);
   return { success: true };
 }
 

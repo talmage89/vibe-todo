@@ -1,9 +1,8 @@
 import { Elysia } from "elysia";
 import { z } from "zod";
 import { verifySubtaskAccess, verifyTaskAccess } from "~/platform/api/access";
-import { ValidationError } from "~/platform/auth/errors";
+import * as subtaskService from "~/platform/api/services/subtask-service";
 import { type AuthUser, authMiddleware, requireAuth } from "~/platform/auth/middleware";
-import { db } from "~/platform/db";
 
 const createSubtaskSchema = z.object({
   title: z
@@ -22,22 +21,7 @@ type CreateSubtaskHandlerProps = {
 async function createSubtaskHandler({ user, params, body }: CreateSubtaskHandlerProps) {
   const authenticatedUser = requireAuth(user);
   await verifyTaskAccess(authenticatedUser.id, params.projectId, params.taskId);
-
-  const maxPositionResult = await db.subtask.aggregate({
-    where: { taskId: params.taskId },
-    _max: { position: true },
-  });
-
-  const nextPosition = (maxPositionResult._max.position ?? -1) + 1;
-
-  const subtask = await db.subtask.create({
-    data: {
-      title: body.title,
-      position: nextPosition,
-      taskId: params.taskId,
-    },
-  });
-
+  const subtask = await subtaskService.createSubtask(params.taskId, body.title);
   return { success: true, subtask };
 }
 
@@ -49,12 +33,7 @@ type GetSubtasksHandlerProps = {
 async function getSubtasksHandler({ user, params }: GetSubtasksHandlerProps) {
   const authenticatedUser = requireAuth(user);
   await verifyTaskAccess(authenticatedUser.id, params.projectId, params.taskId);
-
-  const subtasks = await db.subtask.findMany({
-    where: { taskId: params.taskId },
-    orderBy: { position: "asc" },
-  });
-
+  const subtasks = await subtaskService.listSubtasks(params.taskId);
   return { success: true, subtasks };
 }
 
@@ -82,16 +61,8 @@ async function updateSubtaskHandler({ user, params, body }: UpdateSubtaskHandler
     params.taskId,
     params.subtaskId,
   );
-
-  const updatedSubtask = await db.subtask.update({
-    where: { id: params.subtaskId },
-    data: {
-      ...(body.title !== undefined && { title: body.title }),
-      ...(body.completed !== undefined && { completed: body.completed }),
-    },
-  });
-
-  return { success: true, subtask: updatedSubtask };
+  const subtask = await subtaskService.updateSubtask(params.subtaskId, body);
+  return { success: true, subtask };
 }
 
 type DeleteSubtaskHandlerProps = {
@@ -107,11 +78,7 @@ async function deleteSubtaskHandler({ user, params }: DeleteSubtaskHandlerProps)
     params.taskId,
     params.subtaskId,
   );
-
-  await db.subtask.delete({
-    where: { id: params.subtaskId },
-  });
-
+  await subtaskService.deleteSubtask(params.subtaskId);
   return { success: true };
 }
 
@@ -128,42 +95,8 @@ type ReorderSubtasksHandlerProps = {
 async function reorderSubtasksHandler({ user, params, body }: ReorderSubtasksHandlerProps) {
   const authenticatedUser = requireAuth(user);
   await verifyTaskAccess(authenticatedUser.id, params.projectId, params.taskId);
-
-  const subtasks = await db.subtask.findMany({
-    where: { taskId: params.taskId },
-    select: { id: true },
-  });
-
-  const existingIds = new Set(subtasks.map((s) => s.id));
-  const providedIds = new Set(body.subtaskIds);
-
-  for (const id of body.subtaskIds) {
-    if (!existingIds.has(id)) {
-      throw new ValidationError(`Subtask ${id} not found in this task`);
-    }
-  }
-
-  for (const id of existingIds) {
-    if (!providedIds.has(id)) {
-      throw new ValidationError("All subtasks must be included in reorder");
-    }
-  }
-
-  await db.$transaction(
-    body.subtaskIds.map((id, index) =>
-      db.subtask.update({
-        where: { id },
-        data: { position: index },
-      }),
-    ),
-  );
-
-  const updatedSubtasks = await db.subtask.findMany({
-    where: { taskId: params.taskId },
-    orderBy: { position: "asc" },
-  });
-
-  return { success: true, subtasks: updatedSubtasks };
+  const subtasks = await subtaskService.reorderTaskSubtasks(params.taskId, body.subtaskIds);
+  return { success: true, subtasks };
 }
 
 export const subtaskRoutes = new Elysia()

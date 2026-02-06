@@ -1,9 +1,9 @@
 import { Elysia } from "elysia";
 import type { Cookie } from "elysia/cookies";
 import { z } from "zod";
+import * as userService from "~/platform/api/services/user-service";
 import { type AuthUser, authMiddleware, requireAuth } from "~/platform/auth/middleware";
 import { clearSessionCookie, SESSION_COOKIE_NAME } from "~/platform/auth/session";
-import { db } from "~/platform/db";
 import { DefaultView, Theme } from "~/platform/db/generated";
 
 function getMeHandler({ user }: { user: AuthUser | undefined }) {
@@ -37,30 +37,8 @@ type UpdateMeHandlerProps = {
 
 async function updateMeHandler({ user, body }: UpdateMeHandlerProps) {
   const authenticatedUser = requireAuth(user);
-
-  const updatedUser = await db.user.update({
-    where: { id: authenticatedUser.id },
-    data: {
-      ...(body.name !== undefined && { name: body.name?.trim() || null }),
-      ...(body.theme !== undefined && { theme: body.theme }),
-      ...(body.defaultView !== undefined && { defaultView: body.defaultView }),
-      ...(body.defaultProjectId !== undefined && { defaultProjectId: body.defaultProjectId }),
-    },
-  });
-
-  return {
-    success: true,
-    user: {
-      id: updatedUser.id,
-      email: updatedUser.email,
-      name: updatedUser.name,
-      avatar: updatedUser.avatar,
-      createdAt: updatedUser.createdAt,
-      theme: updatedUser.theme,
-      defaultView: updatedUser.defaultView,
-      defaultProjectId: updatedUser.defaultProjectId,
-    },
-  };
+  const updatedUser = await userService.updateUser(authenticatedUser.id, body);
+  return { success: true, user: updatedUser };
 }
 
 async function deleteMeHandler({
@@ -71,59 +49,20 @@ async function deleteMeHandler({
   cookie: Record<string, Cookie<unknown>>;
 }) {
   const authenticatedUser = requireAuth(user);
-
-  await db.user.delete({
-    where: { id: authenticatedUser.id },
-  });
-
+  await userService.deleteUser(authenticatedUser.id);
   cookie[SESSION_COOKIE_NAME]?.set(clearSessionCookie());
-
   return { success: true };
 }
 
 async function getAccountsHandler({ user }: { user: AuthUser | undefined }) {
   const authenticatedUser = requireAuth(user);
-
-  const accounts = await db.account.findMany({
-    where: { userId: authenticatedUser.id },
-    select: {
-      id: true,
-      provider: true,
-      createdAt: true,
-    },
-    orderBy: { createdAt: "asc" },
-  });
-
+  const accounts = await userService.listAccounts(authenticatedUser.id);
   return { success: true, accounts };
 }
 
 async function exportDataHandler({ user }: { user: AuthUser | undefined }) {
   const authenticatedUser = requireAuth(user);
-
-  const userData = await db.user.findUnique({
-    where: { id: authenticatedUser.id },
-    include: {
-      accounts: {
-        select: {
-          provider: true,
-          createdAt: true,
-        },
-      },
-      projects: {
-        include: {
-          sections: true,
-          tasks: {
-            include: {
-              subtasks: true,
-              tags: true,
-            },
-          },
-          tags: true,
-        },
-      },
-    },
-  });
-
+  const userData = await userService.exportUserData(authenticatedUser.id);
   return {
     success: true,
     exportedAt: new Date().toISOString(),
