@@ -260,6 +260,7 @@ export function ProjectView() {
         onOpenChange={handleDetailModalOpenChange}
         task={selectedTask}
         loading={taskLoading}
+        sections={sections}
         onUpdateTask={handleUpdateSelectedTask}
         onDeleteTask={handleDeleteSelectedTask}
         onCreateSubtask={createSubtask}

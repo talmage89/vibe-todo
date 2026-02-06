@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import type { Section } from "~/features/sections/hooks/use-sections";
 import { TaskPriority, TaskStatus } from "~/platform/db/generated";
 import type { Subtask, Task } from "../hooks/use-task";
 import { ActivityLog } from "./activity-log";
@@ -30,8 +31,11 @@ interface TaskDetailModalProps {
   onOpenChange: (open: boolean) => void;
   task: Task | null;
   loading: boolean;
+  sections: Section[];
   onUpdateTask: (
-    updates: Partial<Pick<Task, "title" | "description" | "dueDate" | "priority" | "status">>,
+    updates: Partial<
+      Pick<Task, "title" | "description" | "dueDate" | "priority" | "status" | "sectionId">
+    >,
   ) => Promise<Task>;
   onDeleteTask: () => Promise<void>;
   onCreateSubtask: (title: string) => Promise<Subtask>;
@@ -57,11 +61,14 @@ const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
   { value: TaskStatus.DONE, label: "Done" },
 ];
 
+const NO_SECTION_VALUE = "__none__";
+
 export function TaskDetailModal({
   open,
   onOpenChange,
   task,
   loading,
+  sections,
   onUpdateTask,
   onDeleteTask,
   onCreateSubtask,
@@ -107,7 +114,7 @@ export function TaskDetailModal({
                   onSave={(description) => onUpdateTask({ description })}
                 />
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-1.5">
                     <label className="font-medium text-secondary text-xs">Status</label>
                     <Select
@@ -140,6 +147,28 @@ export function TaskDetailModal({
                         {PRIORITY_OPTIONS.map((option) => (
                           <SelectItem key={option.value} value={option.value}>
                             {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="font-medium text-secondary text-xs">Section</label>
+                    <Select
+                      value={task.sectionId ?? NO_SECTION_VALUE}
+                      onValueChange={(value) =>
+                        onUpdateTask({ sectionId: value === NO_SECTION_VALUE ? null : value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={NO_SECTION_VALUE}>No section</SelectItem>
+                        {sections.map((section) => (
+                          <SelectItem key={section.id} value={section.id}>
+                            {section.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
