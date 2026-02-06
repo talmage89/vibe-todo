@@ -1,6 +1,8 @@
 import { Elysia } from "elysia";
+import type { Cookie } from "elysia/cookies";
 import { z } from "zod";
 import { type AuthUser, authMiddleware, requireAuth } from "~/platform/auth/middleware";
+import { clearSessionCookie, SESSION_COOKIE_NAME } from "~/platform/auth/session";
 import { db } from "~/platform/db";
 import { DefaultView, Theme } from "~/platform/db/generated";
 
@@ -61,12 +63,20 @@ async function updateMeHandler({ user, body }: UpdateMeHandlerProps) {
   };
 }
 
-async function deleteMeHandler({ user }: { user: AuthUser | undefined }) {
+async function deleteMeHandler({
+  user,
+  cookie,
+}: {
+  user: AuthUser | undefined;
+  cookie: Record<string, Cookie<unknown>>;
+}) {
   const authenticatedUser = requireAuth(user);
 
   await db.user.delete({
     where: { id: authenticatedUser.id },
   });
+
+  cookie[SESSION_COOKIE_NAME]?.set(clearSessionCookie());
 
   return { success: true };
 }
