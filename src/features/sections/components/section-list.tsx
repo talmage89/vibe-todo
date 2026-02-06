@@ -12,7 +12,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { useCallback, useState } from "react";
+import { type ReactNode, useCallback, useState } from "react";
 import type { Section } from "../hooks/use-sections";
 import { SectionCreateForm } from "./section-create-form";
 import { SectionItem } from "./section-item";
@@ -24,6 +24,7 @@ interface SectionListProps {
   onDeleteSection: (sectionId: string) => Promise<void>;
   onReorderSections: (sectionIds: string[]) => Promise<void>;
   taskCountBySectionId?: Record<string, number>;
+  renderSectionContent?: (sectionId: string, isCollapsed: boolean) => ReactNode;
 }
 
 export function SectionList({
@@ -33,6 +34,7 @@ export function SectionList({
   onDeleteSection,
   onReorderSections,
   taskCountBySectionId = {},
+  renderSectionContent,
 }: SectionListProps) {
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
 
@@ -100,7 +102,9 @@ export function SectionList({
               onUpdate={(name) => onUpdateSection(section.id, name)}
               onDelete={() => onDeleteSection(section.id)}
               taskCount={taskCountBySectionId[section.id]}
-            />
+            >
+              {renderSectionContent?.(section.id, collapsedSections.has(section.id))}
+            </SectionItem>
           ))}
         </SortableContext>
       </DndContext>

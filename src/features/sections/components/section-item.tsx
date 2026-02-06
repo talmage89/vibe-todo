@@ -8,7 +8,7 @@ import {
   PencilIcon,
   TrashIcon,
 } from "@heroicons/react/24/outline";
-import { type KeyboardEvent, useCallback, useRef, useState } from "react";
+import { type KeyboardEvent, type ReactNode, useCallback, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/components/ui/cn";
 import {
@@ -28,6 +28,7 @@ interface SectionItemProps {
   onUpdate: (name: string) => Promise<unknown>;
   onDelete: () => Promise<void>;
   taskCount?: number;
+  children?: ReactNode;
 }
 
 export function SectionItem({
@@ -37,6 +38,7 @@ export function SectionItem({
   onUpdate,
   onDelete,
   taskCount = 0,
+  children,
 }: SectionItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(section.name);
@@ -193,6 +195,8 @@ export function SectionItem({
       </div>
 
       {error && <p className="px-2 pb-1.5 text-sm text-urgent">{error}</p>}
+
+      {!isCollapsed && children}
     </div>
   );
 }
