@@ -16,11 +16,15 @@ export async function createSection(projectId: string, name: string) {
   });
 }
 
-export async function updateSection(sectionId: string, data: { name?: string }) {
+type UpdateSectionData = {
+  name?: string;
+};
+
+export async function updateSection(sectionId: string, data: UpdateSectionData) {
   return db.section.update({
     where: { id: sectionId },
     data: {
-      ...(data.name !== undefined && { name: data.name }),
+      name: data.name,
     },
   });
 }

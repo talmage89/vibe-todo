@@ -1,7 +1,27 @@
 import { ValidationError } from "~/platform/auth/errors";
 import { db } from "~/platform/db";
-import type { TaskPriority, TaskStatus } from "~/platform/db/generated";
+import { TaskPriority, TaskStatus } from "~/platform/db/generated";
 import { getNextTaskPosition, reorderTasks } from "./position";
+
+type CreateTaskData = {
+  title: string;
+  description?: string;
+  dueDate?: Date;
+  priority?: TaskPriority;
+  status?: TaskStatus;
+  sectionId?: string | null;
+  tagIds?: string[];
+};
+
+type UpdateTaskData = {
+  title?: string;
+  description?: string | null;
+  dueDate?: Date | null;
+  priority?: TaskPriority;
+  status?: TaskStatus;
+  sectionId?: string | null;
+  tagIds?: string[];
+};
 
 const taskInclude = {
   subtasks: { orderBy: { position: "asc" as const } },
@@ -15,28 +35,16 @@ export async function listTasks(
   return db.task.findMany({
     where: {
       projectId,
-      ...(filters?.sectionId !== undefined && { sectionId: filters.sectionId }),
-      ...(filters?.status !== undefined && { status: filters.status }),
-      ...(filters?.priority !== undefined && { priority: filters.priority }),
+      sectionId: filters?.sectionId,
+      status: filters?.status,
+      priority: filters?.priority,
     },
     include: taskInclude,
     orderBy: { position: "asc" },
   });
 }
 
-export async function createTask(
-  userId: string,
-  projectId: string,
-  data: {
-    title: string;
-    description?: string;
-    dueDate?: Date;
-    priority?: TaskPriority;
-    status?: TaskStatus;
-    sectionId?: string | null;
-    tagIds?: string[];
-  },
-) {
+export async function createTask(userId: string, projectId: string, data: CreateTaskData) {
   if (data.sectionId) {
     const section = await db.section.findUnique({
       where: { id: data.sectionId },
@@ -62,8 +70,8 @@ export async function createTask(
       title: data.title,
       description: data.description,
       dueDate: data.dueDate,
-      priority: data.priority ?? "NONE",
-      status: data.status ?? "TODO",
+      priority: data.priority ?? TaskPriority.NONE,
+      status: data.status ?? TaskStatus.TODO,
       position,
       userId,
       projectId,
@@ -94,15 +102,7 @@ export async function updateTask(
   projectId: string,
   taskId: string,
   existingTask: { position: number; sectionId: string | null },
-  data: {
-    title?: string;
-    description?: string | null;
-    dueDate?: Date | null;
-    priority?: TaskPriority;
-    status?: TaskStatus;
-    sectionId?: string | null;
-    tagIds?: string[];
-  },
+  data: UpdateTaskData,
 ) {
   if (data.sectionId !== undefined && data.sectionId !== null) {
     const section = await db.section.findUnique({
@@ -130,11 +130,11 @@ export async function updateTask(
   return db.task.update({
     where: { id: taskId },
     data: {
-      ...(data.title !== undefined && { title: data.title }),
-      ...(data.description !== undefined && { description: data.description }),
-      ...(data.dueDate !== undefined && { dueDate: data.dueDate }),
-      ...(data.priority !== undefined && { priority: data.priority }),
-      ...(data.status !== undefined && { status: data.status }),
+      title: data.title,
+      description: data.description,
+      dueDate: data.dueDate,
+      priority: data.priority,
+      status: data.status,
       ...(data.sectionId !== undefined && {
         sectionId: data.sectionId,
         position: newPosition,

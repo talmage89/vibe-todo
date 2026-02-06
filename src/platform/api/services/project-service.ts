@@ -1,5 +1,11 @@
-import { AuthorizationError, NotFoundError, ValidationError } from "~/platform/auth/errors";
+import { verifyProjectAccess } from "~/platform/api/access";
+import { ValidationError } from "~/platform/auth/errors";
 import { db } from "~/platform/db";
+
+type UpdateProjectData = {
+  name?: string;
+  color?: string | null;
+};
 
 export async function listProjects(userId: string) {
   return db.project.findMany({
@@ -23,37 +29,11 @@ export async function createProject(userId: string, name: string, color?: string
 }
 
 export async function getProject(userId: string, projectId: string) {
-  const project = await db.project.findUnique({
-    where: { id: projectId },
-  });
-
-  if (!project) {
-    throw new NotFoundError("Project not found");
-  }
-
-  if (project.userId !== userId) {
-    throw new AuthorizationError("You do not have access to this project");
-  }
-
-  return project;
+  return verifyProjectAccess(userId, projectId);
 }
 
-export async function updateProject(
-  userId: string,
-  projectId: string,
-  data: { name?: string; color?: string | null },
-) {
-  const project = await db.project.findUnique({
-    where: { id: projectId },
-  });
-
-  if (!project) {
-    throw new NotFoundError("Project not found");
-  }
-
-  if (project.userId !== userId) {
-    throw new AuthorizationError("You do not have access to this project");
-  }
+export async function updateProject(userId: string, projectId: string, data: UpdateProjectData) {
+  await verifyProjectAccess(userId, projectId);
 
   if (data.name !== undefined && data.name.trim().length === 0) {
     throw new ValidationError("Project name cannot be empty");
@@ -62,24 +42,13 @@ export async function updateProject(
   return db.project.update({
     where: { id: projectId },
     data: {
-      ...(data.name !== undefined && { name: data.name.trim() }),
-      ...(data.color !== undefined && { color: data.color }),
+      name: data.name?.trim(),
+      color: data.color,
     },
   });
 }
 
 export async function deleteProject(userId: string, projectId: string) {
-  const project = await db.project.findUnique({
-    where: { id: projectId },
-  });
-
-  if (!project) {
-    throw new NotFoundError("Project not found");
-  }
-
-  if (project.userId !== userId) {
-    throw new AuthorizationError("You do not have access to this project");
-  }
-
+  await verifyProjectAccess(userId, projectId);
   await db.project.delete({ where: { id: projectId } });
 }

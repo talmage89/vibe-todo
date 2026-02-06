@@ -1,6 +1,13 @@
 import { db } from "~/platform/db";
 import type { DefaultView, Theme } from "~/platform/db/generated";
 
+type UpdateUserData = {
+  name?: string | null;
+  theme?: Theme;
+  defaultView?: DefaultView;
+  defaultProjectId?: string | null;
+};
+
 const userSelectFields = {
   id: true,
   email: true,
@@ -12,24 +19,14 @@ const userSelectFields = {
   defaultProjectId: true,
 } as const;
 
-export async function updateUser(
-  userId: string,
-  data: {
-    name?: string | null;
-    theme?: Theme;
-    defaultView?: DefaultView;
-    defaultProjectId?: string | null;
-  },
-) {
+export async function updateUser(userId: string, data: UpdateUserData) {
   return db.user.update({
     where: { id: userId },
     data: {
-      ...(data.name !== undefined && { name: data.name?.trim() || null }),
-      ...(data.theme !== undefined && { theme: data.theme }),
-      ...(data.defaultView !== undefined && { defaultView: data.defaultView }),
-      ...(data.defaultProjectId !== undefined && {
-        defaultProjectId: data.defaultProjectId,
-      }),
+      name: data.name !== undefined ? data.name?.trim() || null : undefined,
+      theme: data.theme,
+      defaultView: data.defaultView,
+      defaultProjectId: data.defaultProjectId,
     },
     select: userSelectFields,
   });

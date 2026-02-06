@@ -22,11 +22,16 @@ export async function createTag(projectId: string, name: string, color: string) 
   });
 }
 
+type UpdateTagData = {
+  name?: string;
+  color?: string;
+};
+
 export async function updateTag(
   projectId: string,
   tagId: string,
   currentName: string,
-  data: { name?: string; color?: string },
+  data: UpdateTagData,
 ) {
   if (data.name !== undefined && data.name !== currentName) {
     const existing = await db.tag.findUnique({
@@ -41,8 +46,8 @@ export async function updateTag(
   return db.tag.update({
     where: { id: tagId },
     data: {
-      ...(data.name !== undefined && { name: data.name }),
-      ...(data.color !== undefined && { color: data.color }),
+      name: data.name,
+      color: data.color,
     },
   });
 }

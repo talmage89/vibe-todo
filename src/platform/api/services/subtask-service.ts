@@ -16,15 +16,17 @@ export async function createSubtask(taskId: string, title: string) {
   });
 }
 
-export async function updateSubtask(
-  subtaskId: string,
-  data: { title?: string; completed?: boolean },
-) {
+type UpdateSubtaskData = {
+  title?: string;
+  completed?: boolean;
+};
+
+export async function updateSubtask(subtaskId: string, data: UpdateSubtaskData) {
   return db.subtask.update({
     where: { id: subtaskId },
     data: {
-      ...(data.title !== undefined && { title: data.title }),
-      ...(data.completed !== undefined && { completed: data.completed }),
+      title: data.title,
+      completed: data.completed,
     },
   });
 }
