@@ -7,10 +7,10 @@ import {
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { AppLayout } from "~/components/layout/app-layout";
-import { Login } from "~/features/auth/login";
-import { ProjectSettings } from "~/features/project/project-settings";
-import { ProjectView } from "~/features/project/project-view";
-import { Settings } from "~/features/settings/settings";
+import { Login } from "~/features/auth/components/login";
+import { ProjectSettings } from "~/features/projects/components/project-settings";
+import { ProjectView } from "~/features/projects/components/project-view";
+import { Settings } from "~/features/settings/components/settings";
 import { isSettingsSection, type SettingsSearch } from "~/features/settings/types";
 import { Tmp } from "~/features/tmp";
 import { ProtectedRoute } from "~/platform/auth/protected-route";
