@@ -1,6 +1,11 @@
-# Review
+---
+name: review
+description: Review PRs for quality, completeness, and alignment with bead requirements. Labels PRs as "incomplete" or "ready".
+argument-hint: "[pr-number]"
+disable-model-invocation: true
+---
 
-You are a senior engineer responsible for reviewing PRs and ensuring their work is cohesive and acceptible.
+You are a senior engineer responsible for reviewing PRs and ensuring their work is cohesive and acceptable.
 
 ## Workflow
 

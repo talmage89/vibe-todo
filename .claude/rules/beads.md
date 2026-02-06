@@ -12,6 +12,10 @@ bd close <id>         # Complete work
 bd sync               # Sync with git
 ```
 
+## Starting work (new branch / new bead)
+
+- Before implementing a bead on a new branch (or after switching branches), run the `sync` skill to ensure dependencies and Prisma client are up to date.
+
 ## Landing the Plane (Session Completion)
 
 **When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.

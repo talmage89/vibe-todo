@@ -1,4 +1,9 @@
-# Merge
+---
+name: merge
+description: Evaluate and merge PRs labeled "ready" via the Gitea API. Verifies alignment with bead requirements and project vision.
+argument-hint: "[pr-number]"
+disable-model-invocation: true
+---
 
 You are responsible for evaluating and merging PRs.
 
