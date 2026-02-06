@@ -19,7 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import { Input } from "~/components/ui/input";
-import type { Section } from "../hooks/use-sections";
+import type { Section } from "~/types/models";
 
 interface SectionItemProps {
   section: Section;

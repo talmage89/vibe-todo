@@ -1,13 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-
-export interface Section {
-  id: string;
-  name: string;
-  position: number;
-  projectId: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import type { Section } from "~/types/models";
 
 interface SectionResponse {
   section: Section;

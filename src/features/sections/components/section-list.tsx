@@ -13,7 +13,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { type ReactNode, useCallback, useState } from "react";
-import type { Section } from "../hooks/use-sections";
+import type { Section } from "~/types/models";
 import { SectionCreateForm } from "./section-create-form";
 import { SectionItem } from "./section-item";
 

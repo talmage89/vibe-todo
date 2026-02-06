@@ -17,9 +17,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import type { Section } from "~/features/sections/hooks/use-sections";
-import { TaskPriority, TaskStatus } from "~/platform/db/generated";
-import type { Subtask, Tag, Task, TaskUpdates } from "../hooks/use-task";
+import type { Section, Subtask, Tag, Task, TaskUpdates } from "~/types/models";
+import { TaskPriority, TaskStatus } from "~/types/models";
 import { ActivityLog } from "./activity-log";
 import { DescriptionField } from "./description-field";
 import { DueDateField } from "./due-date-field";

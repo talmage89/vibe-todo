@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import type { Tag } from "./use-task";
+import type { Tag } from "~/types/models";
 
 export function useTags(projectId: string) {
   const [tags, setTags] = useState<Tag[]>([]);

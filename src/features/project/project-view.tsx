@@ -11,13 +11,7 @@ import { TaskDetailModal } from "~/features/tasks/components/task-detail-modal";
 import { useProjectTasks } from "~/features/tasks/hooks/use-project-tasks";
 import { useTags } from "~/features/tasks/hooks/use-tags";
 import { useTask } from "~/features/tasks/hooks/use-task";
-import type { TaskStatus } from "~/platform/db/generated";
-
-interface Project {
-  id: string;
-  name: string;
-  color: string | null;
-}
+import type { Project, TaskStatus } from "~/types/models";
 
 export function ProjectView() {
   const { projectId } = useParams({ from: "/project/$projectId" });
