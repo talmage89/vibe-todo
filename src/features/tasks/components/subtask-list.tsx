@@ -19,7 +19,7 @@ import { type KeyboardEvent, useCallback, useEffect, useRef, useState } from "re
 import { Button } from "~/components/ui/button";
 import { cn } from "~/components/ui/cn";
 import { Input } from "~/components/ui/input";
-import type { Subtask } from "~/types/models";
+import type { Subtask } from "../types";
 
 interface SubtaskListProps {
   subtasks: Subtask[];

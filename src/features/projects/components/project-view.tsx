@@ -11,7 +11,8 @@ import { TaskDetailModal } from "~/features/tasks/components/task-detail-modal";
 import { useProjectTasks } from "~/features/tasks/hooks/use-project-tasks";
 import { useTags } from "~/features/tasks/hooks/use-tags";
 import { useTask } from "~/features/tasks/hooks/use-task";
-import type { Project, TaskStatus } from "~/types/models";
+import type { TaskStatus } from "~/features/tasks/types";
+import type { Project } from "../types";
 
 export function ProjectView() {
   const { projectId } = useParams({ from: "/project/$projectId" });

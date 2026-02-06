@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import type { Project } from "~/types/models";
+import type { Project } from "../types";
 
 interface UseProjectsResult {
   projects: Project[];

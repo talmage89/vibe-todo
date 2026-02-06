@@ -1,4 +1,4 @@
-import type { Task, TaskStatus } from "~/types/models";
+import type { Task, TaskStatus } from "../types";
 import { TaskListItem } from "./task-list-item";
 import { TaskQuickAdd } from "./task-quick-add";
 

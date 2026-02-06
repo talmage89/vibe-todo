@@ -1,7 +1,7 @@
 import { Elysia } from "elysia";
 import { z } from "zod";
-import * as projectService from "~/platform/api/services/project-service";
 import { type AuthUser, authMiddleware, requireAuth } from "~/platform/auth/middleware";
+import * as projectService from "./service";
 
 async function getProjectsHandler({ user }: { user: AuthUser | undefined }) {
   const authenticatedUser = requireAuth(user);

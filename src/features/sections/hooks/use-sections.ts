@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import type { Section } from "~/types/models";
+import type { Section } from "../types";
 
 interface SectionResponse {
   section: Section;

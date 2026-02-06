@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import type { CreateTaskData, Task } from "~/types/models";
+import type { CreateTaskData, Task } from "../types";
 
 export function useTasks(projectId: string, sectionId?: string | null) {
   const [tasks, setTasks] = useState<Task[]>([]);

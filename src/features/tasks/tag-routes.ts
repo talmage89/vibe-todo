@@ -1,8 +1,8 @@
 import { Elysia } from "elysia";
 import { z } from "zod";
 import { verifyProjectAccess, verifyTagAccess } from "~/platform/api/access";
-import * as tagService from "~/platform/api/services/tag-service";
 import { type AuthUser, authMiddleware, requireAuth } from "~/platform/auth/middleware";
+import * as tagService from "./tag-service";
 
 const createTagSchema = z.object({
   name: z

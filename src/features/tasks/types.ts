@@ -1,41 +1,7 @@
 import type { Prisma } from "~/platform/db/generated";
+import type { SerializedDate } from "~/types/serialization";
 
 export { TaskPriority, TaskStatus } from "~/platform/db/generated";
-
-type SerializedDate<T> = {
-  [K in keyof T]: T[K] extends Date
-    ? string
-    : T[K] extends Date | null
-      ? string | null
-      : T[K] extends Array<infer U>
-        ? Array<SerializedDate<U>>
-        : T[K];
-};
-
-const projectSelect = {
-  id: true,
-  name: true,
-  color: true,
-  createdAt: true,
-  updatedAt: true,
-} satisfies Prisma.ProjectSelect;
-
-type PrismaProject = Prisma.ProjectGetPayload<{ select: typeof projectSelect }>;
-
-export type Project = SerializedDate<PrismaProject>;
-
-const sectionSelect = {
-  id: true,
-  name: true,
-  position: true,
-  projectId: true,
-  createdAt: true,
-  updatedAt: true,
-} satisfies Prisma.SectionSelect;
-
-type PrismaSection = Prisma.SectionGetPayload<{ select: typeof sectionSelect }>;
-
-export type Section = SerializedDate<PrismaSection>;
 
 const taskSelect = {
   id: true,

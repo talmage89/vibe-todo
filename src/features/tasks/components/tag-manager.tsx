@@ -5,7 +5,7 @@ import { ConfirmDialog } from "~/components/ui/confirm-dialog";
 import { Input } from "~/components/ui/input";
 import { useToast } from "~/components/ui/toast";
 import { TAG_COLORS } from "~/features/tasks/constants";
-import type { Tag } from "~/types/models";
+import type { Tag } from "../types";
 
 interface TagManagerProps {
   tags: Tag[];

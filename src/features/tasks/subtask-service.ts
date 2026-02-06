@@ -1,5 +1,5 @@
+import { getNextSubtaskPosition, reorderSubtasks } from "~/platform/api/position";
 import { db } from "~/platform/db";
-import { getNextSubtaskPosition, reorderSubtasks } from "./position";
 
 export async function listSubtasks(taskId: string) {
   return db.subtask.findMany({

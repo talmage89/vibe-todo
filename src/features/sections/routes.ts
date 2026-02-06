@@ -1,8 +1,8 @@
 import { Elysia } from "elysia";
 import { z } from "zod";
 import { verifyProjectAccess, verifySectionAccess } from "~/platform/api/access";
-import * as sectionService from "~/platform/api/services/section-service";
 import { type AuthUser, authMiddleware, requireAuth } from "~/platform/auth/middleware";
+import * as sectionService from "./service";
 
 type GetSectionsHandlerProps = {
   user: AuthUser | undefined;

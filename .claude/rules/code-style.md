@@ -15,12 +15,15 @@ Each feature in `src/features/` follows a consistent structure:
 features/<name>/
   components/    # UI components (React)
   hooks/         # Custom React hooks (data fetching, state)
+  service.ts     # Server-side business logic (optional)
+  routes.ts      # Server-side HTTP handlers (optional)
   types.ts       # Feature-specific type definitions
   constants.ts   # Feature-specific constants
 ```
 
 - All React components live in `components/`, including page-level views.
 - All hooks live in `hooks/`.
+- Server-side domain logic (services + routes) is colocated with the feature.
 - `types.ts` and `constants.ts` live at the feature root.
 - Use plural feature names (`projects/`, `tasks/`, `sections/`).
 - Cross-feature imports use absolute `~/` paths. Within-feature imports use relative paths.

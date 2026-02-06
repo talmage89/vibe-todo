@@ -9,10 +9,10 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { useToast } from "~/components/ui/toast";
+import type { Project } from "~/features/projects/types";
 import { useAuth } from "~/platform/auth/use-auth";
 import { DefaultView, Theme } from "~/platform/db/generated";
 import { useTheme } from "~/platform/theme/use-theme";
-import type { Project } from "~/types/models";
 
 const themeOptions: { value: Theme; label: string }[] = [
   { value: Theme.SYSTEM, label: "System" },

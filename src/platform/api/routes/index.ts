@@ -1,11 +1,11 @@
 import type { Elysia } from "elysia";
+import { projectRoutes } from "~/features/projects/routes";
+import { sectionRoutes } from "~/features/sections/routes";
+import { userRoutes } from "~/features/settings/routes";
+import { subtaskRoutes } from "~/features/tasks/subtask-routes";
+import { tagRoutes } from "~/features/tasks/tag-routes";
+import { taskRoutes } from "~/features/tasks/task-routes";
 import { ApiError } from "~/platform/auth/errors";
-import { projectRoutes } from "./projects";
-import { sectionRoutes } from "./sections";
-import { subtaskRoutes } from "./subtasks";
-import { tagRoutes } from "./tags";
-import { taskRoutes } from "./tasks";
-import { userRoutes } from "./user";
 
 export const registerApiRoutes = (app: Elysia) => {
   app.group("/api", (api) =>

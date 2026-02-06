@@ -9,7 +9,7 @@ import { useToast } from "~/components/ui/toast";
 import { ColorPicker } from "~/features/projects/components/color-picker";
 import { TagManager } from "~/features/tasks/components/tag-manager";
 import { useTags } from "~/features/tasks/hooks/use-tags";
-import type { Project } from "~/types/models";
+import type { Project } from "../types";
 
 export function ProjectSettings() {
   const { projectId } = useParams({ from: "/project/$projectId/settings" });
