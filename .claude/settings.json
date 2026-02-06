@@ -6,12 +6,11 @@
       "Bash(bunx *)",
       "Bash(git *)",
       "Bash(bd *)",
-      "Bash(curl *)",
       "Bash(ls *)",
       "Bash(tree *)",
       "WebSearch(*)"
     ],
     "deny": ["Read(./.env)", "Read(./.env.*)"],
-    "additionalDirectories": ["../todo"]
+    "additionalDirectories": ["../*"]
   }
 }
