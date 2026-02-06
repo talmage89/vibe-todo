@@ -19,11 +19,12 @@ import {
 } from "~/components/ui/select";
 import type { Section } from "~/features/sections/hooks/use-sections";
 import { TaskPriority, TaskStatus } from "~/platform/db/generated";
-import type { Subtask, Task } from "../hooks/use-task";
+import type { Subtask, Tag, TaskUpdates, Task } from "../hooks/use-task";
 import { ActivityLog } from "./activity-log";
 import { DescriptionField } from "./description-field";
 import { DueDateField } from "./due-date-field";
 import { SubtaskList } from "./subtask-list";
+import { TagSelect } from "./tag-select";
 import { TitleField } from "./title-field";
 
 interface TaskDetailModalProps {
@@ -32,11 +33,8 @@ interface TaskDetailModalProps {
   task: Task | null;
   loading: boolean;
   sections: Section[];
-  onUpdateTask: (
-    updates: Partial<
-      Pick<Task, "title" | "description" | "dueDate" | "priority" | "status" | "sectionId">
-    >,
-  ) => Promise<Task>;
+  availableTags?: Tag[];
+  onUpdateTask: (updates: TaskUpdates) => Promise<Task>;
   onDeleteTask: () => Promise<void>;
   onCreateSubtask: (title: string) => Promise<Subtask>;
   onUpdateSubtask: (
@@ -69,6 +67,7 @@ export function TaskDetailModal({
   task,
   loading,
   sections,
+  availableTags = [],
   onUpdateTask,
   onDeleteTask,
   onCreateSubtask,
@@ -180,6 +179,17 @@ export function TaskDetailModal({
                   value={task.dueDate}
                   onSave={(dueDate) => onUpdateTask({ dueDate })}
                 />
+
+                {availableTags.length > 0 && (
+                  <div className="space-y-1.5">
+                    <label className="font-medium text-secondary text-xs">Tags</label>
+                    <TagSelect
+                      tags={availableTags}
+                      selectedIds={task.tags.map((t) => t.id)}
+                      onChange={(tagIds) => onUpdateTask({ tagIds })}
+                    />
+                  </div>
+                )}
 
                 <SubtaskList
                   subtasks={task.subtasks}

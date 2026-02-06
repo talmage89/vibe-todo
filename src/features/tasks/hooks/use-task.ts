@@ -51,6 +51,12 @@ export type Task = SerializedDate<PrismaTask>;
 export type Subtask = Task["subtasks"][number];
 export type Tag = Task["tags"][number];
 
+export type TaskUpdates = Partial<
+  Pick<Task, "title" | "description" | "dueDate" | "priority" | "status" | "sectionId">
+> & {
+  tagIds?: string[];
+};
+
 interface TaskResponse {
   task: Task;
 }
@@ -94,11 +100,7 @@ export function useTask(projectId: string, taskId: string | null) {
   }, [fetchTask]);
 
   const updateTask = useCallback(
-    async (
-      updates: Partial<
-        Pick<Task, "title" | "description" | "dueDate" | "priority" | "status" | "sectionId">
-      >,
-    ): Promise<Task> => {
+    async (updates: TaskUpdates): Promise<Task> => {
       if (!taskId) {
         throw new Error("No task selected");
       }
