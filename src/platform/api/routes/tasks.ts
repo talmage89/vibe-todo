@@ -1,9 +1,8 @@
 import { Elysia } from "elysia";
 import { z } from "zod";
 import { verifyProjectAccess, verifyTaskAccess } from "~/platform/api/access";
-import { ValidationError } from "~/platform/auth/errors";
+import * as taskService from "~/platform/api/services/task-service";
 import { type AuthUser, authMiddleware, requireAuth } from "~/platform/auth/middleware";
-import { db } from "~/platform/db";
 import { TaskPriority, TaskStatus } from "~/platform/db/generated";
 
 const getTasksQuerySchema = z.object({
@@ -21,23 +20,7 @@ type GetTasksHandlerProps = {
 async function getTasksHandler({ user, params, query }: GetTasksHandlerProps) {
   const authenticatedUser = requireAuth(user);
   await verifyProjectAccess(authenticatedUser.id, params.projectId);
-
-  const tasks = await db.task.findMany({
-    where: {
-      projectId: params.projectId,
-      ...(query.sectionId !== undefined && { sectionId: query.sectionId }),
-      ...(query.status !== undefined && { status: query.status }),
-      ...(query.priority !== undefined && { priority: query.priority }),
-    },
-    include: {
-      subtasks: {
-        orderBy: { position: "asc" },
-      },
-      tags: true,
-    },
-    orderBy: { position: "asc" },
-  });
-
+  const tasks = await taskService.listTasks(params.projectId, query);
   return { success: true, tasks };
 }
 
@@ -64,61 +47,7 @@ type CreateTaskHandlerProps = {
 async function createTaskHandler({ user, params, body }: CreateTaskHandlerProps) {
   const authenticatedUser = requireAuth(user);
   await verifyProjectAccess(authenticatedUser.id, params.projectId);
-
-  if (body.sectionId) {
-    const section = await db.section.findUnique({
-      where: { id: body.sectionId },
-    });
-
-    if (!section || section.projectId !== params.projectId) {
-      throw new ValidationError("Section not found in this project");
-    }
-  }
-
-  if (body.tagIds && body.tagIds.length > 0) {
-    const tags = await db.tag.findMany({
-      where: { id: { in: body.tagIds }, projectId: params.projectId },
-    });
-
-    if (tags.length !== body.tagIds.length) {
-      throw new ValidationError("One or more tags not found in this project");
-    }
-  }
-
-  const maxPositionResult = await db.task.aggregate({
-    where: {
-      projectId: params.projectId,
-      sectionId: body.sectionId ?? null,
-    },
-    _max: { position: true },
-  });
-
-  const nextPosition = (maxPositionResult._max.position ?? -1) + 1;
-
-  const task = await db.task.create({
-    data: {
-      title: body.title,
-      description: body.description,
-      dueDate: body.dueDate,
-      priority: body.priority ?? TaskPriority.NONE,
-      status: body.status ?? TaskStatus.TODO,
-      position: nextPosition,
-      userId: authenticatedUser.id,
-      projectId: params.projectId,
-      sectionId: body.sectionId ?? null,
-      ...(body.tagIds &&
-        body.tagIds.length > 0 && {
-          tags: { connect: body.tagIds.map((id) => ({ id })) },
-        }),
-    },
-    include: {
-      subtasks: {
-        orderBy: { position: "asc" },
-      },
-      tags: true,
-    },
-  });
-
+  const task = await taskService.createTask(authenticatedUser.id, params.projectId, body);
   return { success: true, task };
 }
 
@@ -130,21 +59,7 @@ type GetTaskHandlerProps = {
 async function getTaskHandler({ user, params }: GetTaskHandlerProps) {
   const authenticatedUser = requireAuth(user);
   await verifyProjectAccess(authenticatedUser.id, params.projectId);
-
-  const task = await db.task.findUnique({
-    where: { id: params.taskId },
-    include: {
-      subtasks: {
-        orderBy: { position: "asc" },
-      },
-      tags: true,
-    },
-  });
-
-  if (!task || task.projectId !== params.projectId) {
-    throw new ValidationError("Task not found in this project");
-  }
-
+  const task = await taskService.getTask(params.projectId, params.taskId);
   return { success: true, task };
 }
 
@@ -176,65 +91,7 @@ async function updateTaskHandler({ user, params, body }: UpdateTaskHandlerProps)
     params.projectId,
     params.taskId,
   );
-
-  if (body.sectionId !== undefined && body.sectionId !== null) {
-    const section = await db.section.findUnique({
-      where: { id: body.sectionId },
-    });
-
-    if (!section || section.projectId !== params.projectId) {
-      throw new ValidationError("Section not found in this project");
-    }
-  }
-
-  if (body.tagIds !== undefined) {
-    if (body.tagIds.length > 0) {
-      const tags = await db.tag.findMany({
-        where: { id: { in: body.tagIds }, projectId: params.projectId },
-      });
-
-      if (tags.length !== body.tagIds.length) {
-        throw new ValidationError("One or more tags not found in this project");
-      }
-    }
-  }
-
-  let newPosition = existingTask.position;
-  if (body.sectionId !== undefined && body.sectionId !== existingTask.sectionId) {
-    const maxPositionResult = await db.task.aggregate({
-      where: {
-        projectId: params.projectId,
-        sectionId: body.sectionId,
-      },
-      _max: { position: true },
-    });
-    newPosition = (maxPositionResult._max.position ?? -1) + 1;
-  }
-
-  const task = await db.task.update({
-    where: { id: params.taskId },
-    data: {
-      ...(body.title !== undefined && { title: body.title }),
-      ...(body.description !== undefined && { description: body.description }),
-      ...(body.dueDate !== undefined && { dueDate: body.dueDate }),
-      ...(body.priority !== undefined && { priority: body.priority }),
-      ...(body.status !== undefined && { status: body.status }),
-      ...(body.sectionId !== undefined && {
-        sectionId: body.sectionId,
-        position: newPosition,
-      }),
-      ...(body.tagIds !== undefined && {
-        tags: { set: body.tagIds.map((id) => ({ id })) },
-      }),
-    },
-    include: {
-      subtasks: {
-        orderBy: { position: "asc" },
-      },
-      tags: true,
-    },
-  });
-
+  const task = await taskService.updateTask(params.projectId, params.taskId, existingTask, body);
   return { success: true, task };
 }
 
@@ -246,11 +103,7 @@ type DeleteTaskHandlerProps = {
 async function deleteTaskHandler({ user, params }: DeleteTaskHandlerProps) {
   const authenticatedUser = requireAuth(user);
   await verifyTaskAccess(authenticatedUser.id, params.projectId, params.taskId);
-
-  await db.task.delete({
-    where: { id: params.taskId },
-  });
-
+  await taskService.deleteTask(params.taskId);
   return { success: true };
 }
 
@@ -268,56 +121,12 @@ type ReorderTasksHandlerProps = {
 async function reorderTasksHandler({ user, params, body }: ReorderTasksHandlerProps) {
   const authenticatedUser = requireAuth(user);
   await verifyProjectAccess(authenticatedUser.id, params.projectId);
-
-  const targetSectionId = body.sectionId ?? null;
-
-  const tasks = await db.task.findMany({
-    where: {
-      projectId: params.projectId,
-      sectionId: targetSectionId,
-    },
-    select: { id: true },
-  });
-
-  const existingIds = new Set(tasks.map((t) => t.id));
-  const providedIds = new Set(body.taskIds);
-
-  for (const id of body.taskIds) {
-    if (!existingIds.has(id)) {
-      throw new ValidationError(`Task ${id} not found in this section`);
-    }
-  }
-
-  for (const id of existingIds) {
-    if (!providedIds.has(id)) {
-      throw new ValidationError("All tasks in the section must be included in reorder");
-    }
-  }
-
-  await db.$transaction(
-    body.taskIds.map((id, index) =>
-      db.task.update({
-        where: { id },
-        data: { position: index },
-      }),
-    ),
+  const tasks = await taskService.reorderProjectTasks(
+    params.projectId,
+    body.sectionId ?? null,
+    body.taskIds,
   );
-
-  const updatedTasks = await db.task.findMany({
-    where: {
-      projectId: params.projectId,
-      sectionId: targetSectionId,
-    },
-    include: {
-      subtasks: {
-        orderBy: { position: "asc" },
-      },
-      tags: true,
-    },
-    orderBy: { position: "asc" },
-  });
-
-  return { success: true, tasks: updatedTasks };
+  return { success: true, tasks };
 }
 
 export const taskRoutes = new Elysia()

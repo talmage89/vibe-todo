@@ -1,17 +1,11 @@
 import { Elysia } from "elysia";
 import { z } from "zod";
-import { AuthorizationError, NotFoundError, ValidationError } from "~/platform/auth/errors";
+import * as projectService from "~/platform/api/services/project-service";
 import { type AuthUser, authMiddleware, requireAuth } from "~/platform/auth/middleware";
-import { db } from "~/platform/db";
 
 async function getProjectsHandler({ user }: { user: AuthUser | undefined }) {
   const authenticatedUser = requireAuth(user);
-
-  const projects = await db.project.findMany({
-    where: { userId: authenticatedUser.id },
-    orderBy: { createdAt: "asc" },
-  });
-
+  const projects = await projectService.listProjects(authenticatedUser.id);
   return { success: true, projects };
 }
 
@@ -31,27 +25,7 @@ type CreateProjectHandlerProps = {
 
 async function createProjectHandler({ user, body }: CreateProjectHandlerProps) {
   const authenticatedUser = requireAuth(user);
-  const { name, color } = body;
-
-  const existingProject = await db.project.findFirst({
-    where: {
-      userId: authenticatedUser.id,
-      name,
-    },
-  });
-
-  if (existingProject) {
-    throw new ValidationError("A project with this name already exists");
-  }
-
-  const project = await db.project.create({
-    data: {
-      name,
-      color: color || null,
-      userId: authenticatedUser.id,
-    },
-  });
-
+  const project = await projectService.createProject(authenticatedUser.id, body.name, body.color);
   return { success: true, project };
 }
 
@@ -62,19 +36,7 @@ type GetProjectHandlerProps = {
 
 async function getProjectHandler({ user, params }: GetProjectHandlerProps) {
   const authenticatedUser = requireAuth(user);
-
-  const project = await db.project.findUnique({
-    where: { id: params.projectId },
-  });
-
-  if (!project) {
-    throw new NotFoundError("Project not found");
-  }
-
-  if (project.userId !== authenticatedUser.id) {
-    throw new AuthorizationError("You do not have access to this project");
-  }
-
+  const project = await projectService.getProject(authenticatedUser.id, params.projectId);
   return { success: true, project };
 }
 
@@ -91,32 +53,8 @@ type UpdateProjectHandlerProps = {
 
 async function updateProjectHandler({ user, params, body }: UpdateProjectHandlerProps) {
   const authenticatedUser = requireAuth(user);
-
-  const project = await db.project.findUnique({
-    where: { id: params.projectId },
-  });
-
-  if (!project) {
-    throw new NotFoundError("Project not found");
-  }
-
-  if (project.userId !== authenticatedUser.id) {
-    throw new AuthorizationError("You do not have access to this project");
-  }
-
-  if (body.name !== undefined && body.name.trim().length === 0) {
-    throw new ValidationError("Project name cannot be empty");
-  }
-
-  const updatedProject = await db.project.update({
-    where: { id: params.projectId },
-    data: {
-      ...(body.name !== undefined && { name: body.name.trim() }),
-      ...(body.color !== undefined && { color: body.color }),
-    },
-  });
-
-  return { success: true, project: updatedProject };
+  const project = await projectService.updateProject(authenticatedUser.id, params.projectId, body);
+  return { success: true, project };
 }
 
 type DeleteProjectHandlerProps = {
@@ -126,23 +64,7 @@ type DeleteProjectHandlerProps = {
 
 async function deleteProjectHandler({ user, params }: DeleteProjectHandlerProps) {
   const authenticatedUser = requireAuth(user);
-
-  const project = await db.project.findUnique({
-    where: { id: params.projectId },
-  });
-
-  if (!project) {
-    throw new NotFoundError("Project not found");
-  }
-
-  if (project.userId !== authenticatedUser.id) {
-    throw new AuthorizationError("You do not have access to this project");
-  }
-
-  await db.project.delete({
-    where: { id: params.projectId },
-  });
-
+  await projectService.deleteProject(authenticatedUser.id, params.projectId);
   return { success: true };
 }
 
