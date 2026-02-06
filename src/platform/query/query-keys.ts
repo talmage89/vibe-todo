@@ -1,0 +1,25 @@
+export const queryKeys = {
+  projects: {
+    all: ["projects"] as const,
+    detail: (id: string) => ["projects", id] as const,
+  },
+  tasks: {
+    all: (projectId: string) => ["projects", projectId, "tasks"] as const,
+    list: (projectId: string, filters: Record<string, unknown>) =>
+      ["projects", projectId, "tasks", "list", filters] as const,
+    detail: (projectId: string, taskId: string) =>
+      ["projects", projectId, "tasks", taskId] as const,
+  },
+  sections: {
+    all: (projectId: string) => ["projects", projectId, "sections"] as const,
+  },
+  tags: {
+    all: (projectId: string) => ["projects", projectId, "tags"] as const,
+  },
+  auth: {
+    user: ["auth", "user"] as const,
+  },
+  accounts: {
+    all: ["accounts"] as const,
+  },
+};

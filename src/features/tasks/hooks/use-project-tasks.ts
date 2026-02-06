@@ -1,34 +1,30 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
+import { api } from "~/platform/query/api";
+import { queryKeys } from "~/platform/query/query-keys";
 import type { CreateTaskData, Task, TaskStatus } from "~/types/models";
 
+interface TasksResponse {
+  tasks: Task[];
+}
+
+interface TaskResponse {
+  task: Task;
+}
+
 export function useProjectTasks(projectId: string) {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const allTasksKey = queryKeys.tasks.all(projectId);
 
-  const fetchTasks = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const response = await fetch(`/api/projects/${projectId}/tasks`);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to fetch tasks");
-      }
-
-      setTasks(data.tasks);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
-    } finally {
-      setLoading(false);
-    }
-  }, [projectId]);
-
-  useEffect(() => {
-    fetchTasks();
-  }, [fetchTasks]);
+  const {
+    data: tasks = [],
+    isLoading: loading,
+    error: queryError,
+  } = useQuery({
+    queryKey: allTasksKey,
+    queryFn: () => api<TasksResponse>(`/api/projects/${projectId}/tasks`),
+    select: (data) => data.tasks,
+  });
 
   const tasksBySectionId = useMemo(() => {
     const map: Record<string, Task[]> = {};
@@ -50,71 +46,67 @@ export function useProjectTasks(projectId: string) {
     return counts;
   }, [tasks]);
 
-  const createTask = useCallback(
-    async (data: CreateTaskData) => {
-      const response = await fetch(`/api/projects/${projectId}/tasks`, {
+  const createMutation = useMutation({
+    mutationFn: (data: CreateTaskData) =>
+      api<TaskResponse>(`/api/projects/${projectId}/tasks`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Failed to create task");
-      }
-
-      setTasks((prev) => [...prev, result.task]);
-      return result.task as Task;
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: allTasksKey });
     },
-    [projectId],
-  );
+  });
 
-  const updateTask = useCallback(
-    async (taskId: string, data: Partial<CreateTaskData> & { status?: TaskStatus }) => {
-      const response = await fetch(`/api/projects/${projectId}/tasks/${taskId}`, {
+  const updateMutation = useMutation({
+    mutationFn: ({
+      taskId,
+      data,
+    }: {
+      taskId: string;
+      data: Partial<CreateTaskData> & { status?: TaskStatus };
+    }) =>
+      api<TaskResponse>(`/api/projects/${projectId}/tasks/${taskId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Failed to update task");
-      }
-
-      setTasks((prev) => prev.map((t) => (t.id === taskId ? result.task : t)));
-      return result.task as Task;
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: allTasksKey });
     },
-    [projectId],
-  );
+  });
 
-  const deleteTask = useCallback(
-    async (taskId: string) => {
-      const response = await fetch(`/api/projects/${projectId}/tasks/${taskId}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        const result = await response.json();
-        throw new Error(result.error || "Failed to delete task");
-      }
-
-      setTasks((prev) => prev.filter((t) => t.id !== taskId));
+  const deleteMutation = useMutation({
+    mutationFn: (taskId: string) =>
+      api<void>(`/api/projects/${projectId}/tasks/${taskId}`, { method: "DELETE" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: allTasksKey });
     },
-    [projectId],
-  );
+  });
+
+  const createTask = async (data: CreateTaskData): Promise<Task> => {
+    const result = await createMutation.mutateAsync(data);
+    return result.task;
+  };
+
+  const updateTask = async (
+    taskId: string,
+    data: Partial<CreateTaskData> & { status?: TaskStatus },
+  ): Promise<Task> => {
+    const result = await updateMutation.mutateAsync({ taskId, data });
+    return result.task;
+  };
+
+  const deleteTask = async (taskId: string): Promise<void> => {
+    await deleteMutation.mutateAsync(taskId);
+  };
 
   return {
     tasks,
     loading,
-    error,
+    error: queryError?.message ?? null,
     tasksBySectionId,
     taskCountBySectionId,
     createTask,
     updateTask,
     deleteTask,
-    refetch: fetchTasks,
   };
 }

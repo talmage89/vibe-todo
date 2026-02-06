@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/com
 import { Input } from "~/components/ui/input";
 import { useToast } from "~/components/ui/toast";
 import { useAuth } from "~/platform/auth/use-auth";
+import { api } from "~/platform/query/api";
 
 export function ProfileSection() {
   const { user, refetch } = useAuth();
@@ -28,16 +29,10 @@ export function ProfileSection() {
 
     try {
       setSaving(true);
-      const response = await fetch("/api/me", {
+      await api("/api/me", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: name.trim() || null }),
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to update profile");
-      }
 
       await refetch();
       setHasChanges(false);

@@ -1,66 +1,49 @@
-import { useCallback, useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { api } from "~/platform/query/api";
+import { queryKeys } from "~/platform/query/query-keys";
 import type { Project } from "~/types/models";
 
-interface UseProjectsResult {
+interface ProjectsResponse {
   projects: Project[];
-  loading: boolean;
-  error: string | null;
-  refetch: () => Promise<void>;
-  createProject: (data: { name: string; color?: string }) => Promise<Project>;
 }
 
-export const useProjects = (): UseProjectsResult => {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+interface ProjectResponse {
+  project: Project;
+}
 
-  const fetchProjects = useCallback(async () => {
-    try {
-      setError(null);
-      const response = await fetch("/api/projects");
-      const data = await response.json();
+export const useProjects = () => {
+  const queryClient = useQueryClient();
 
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to fetch projects");
-      }
+  const {
+    data: projects = [],
+    isLoading: loading,
+    error: queryError,
+  } = useQuery({
+    queryKey: queryKeys.projects.all,
+    queryFn: () => api<ProjectsResponse>("/api/projects"),
+    select: (data) => data.projects,
+  });
 
-      setProjects(data.projects);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch projects");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const createProject = useCallback(
-    async (input: { name: string; color?: string }): Promise<Project> => {
-      const response = await fetch("/api/projects", {
+  const createMutation = useMutation({
+    mutationFn: (input: { name: string; color?: string }) =>
+      api<ProjectResponse>("/api/projects", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to create project");
-      }
-
-      setProjects((prev) => [...prev, data.project]);
-      return data.project;
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
     },
-    [],
-  );
+  });
 
-  useEffect(() => {
-    fetchProjects();
-  }, [fetchProjects]);
+  const createProject = async (input: { name: string; color?: string }): Promise<Project> => {
+    const data = await createMutation.mutateAsync(input);
+    return data.project;
+  };
 
   return {
     projects,
     loading,
-    error,
-    refetch: fetchProjects,
+    error: queryError?.message ?? null,
     createProject,
   };
 };
