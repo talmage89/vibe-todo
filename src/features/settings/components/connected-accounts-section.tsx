@@ -1,12 +1,18 @@
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { buttonVariants } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { AccountProvider } from "~/platform/db/generated";
+import { api } from "~/platform/query/api";
+import { queryKeys } from "~/platform/query/query-keys";
 
 interface Account {
   id: string;
   provider: AccountProvider;
   createdAt: string;
+}
+
+interface AccountsResponse {
+  accounts: Account[];
 }
 
 const PROVIDER_CONFIG: Record<AccountProvider, { name: string; icon: string }> = {
@@ -35,30 +41,11 @@ function AccountItem({ account }: { account: Account }) {
 }
 
 export function ConnectedAccountsSection() {
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchAccounts = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response = await fetch("/api/accounts");
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch accounts");
-      }
-
-      const data = await response.json();
-      setAccounts(data.accounts ?? []);
-    } catch {
-      setAccounts([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchAccounts();
-  }, [fetchAccounts]);
+  const { data: accounts = [], isLoading: loading } = useQuery({
+    queryKey: queryKeys.accounts.all,
+    queryFn: () => api<AccountsResponse>("/api/accounts"),
+    select: (data) => data.accounts,
+  });
 
   return (
     <Card>

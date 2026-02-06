@@ -1,6 +1,7 @@
 import { Cog6ToothIcon, PlusIcon } from "@heroicons/react/24/outline";
+import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { SectionList } from "~/features/sections/components/section-list";
 import { useSections } from "~/features/sections/hooks/use-sections";
@@ -12,20 +13,28 @@ import { useProjectTasks } from "~/features/tasks/hooks/use-project-tasks";
 import { useTags } from "~/features/tasks/hooks/use-tags";
 import { useTask } from "~/features/tasks/hooks/use-task";
 import type { TaskStatus } from "~/features/tasks/types";
+import { api } from "~/platform/query/api";
+import { queryKeys } from "~/platform/query/query-keys";
 import type { Project } from "../types";
 
 export function ProjectView() {
   const { projectId } = useParams({ from: "/project/$projectId" });
   const navigate = useNavigate();
 
-  const [project, setProject] = useState<Project | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [createModalSectionId, setCreateModalSectionId] = useState<string | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+
+  const {
+    data: project,
+    isLoading: loading,
+    error: projectError,
+  } = useQuery({
+    queryKey: queryKeys.projects.detail(projectId),
+    queryFn: () => api<{ project: Project }>(`/api/projects/${projectId}`),
+    select: (data) => data.project,
+  });
 
   const {
     sections,
@@ -36,14 +45,8 @@ export function ProjectView() {
     reorderSections,
   } = useSections(projectId);
 
-  const {
-    tasksBySectionId,
-    taskCountBySectionId,
-    createTask,
-    updateTask,
-    deleteTask: deleteTaskFromList,
-    refetch: refetchTasks,
-  } = useProjectTasks(projectId);
+  const { tasksBySectionId, taskCountBySectionId, createTask, updateTask } =
+    useProjectTasks(projectId);
 
   const { tags } = useTags(projectId);
   const [filterTagIds, setFilterTagIds] = useState<string[]>([]);
@@ -58,30 +61,6 @@ export function ProjectView() {
     deleteSubtask,
     reorderSubtasks,
   } = useTask(projectId, selectedTaskId);
-
-  const fetchProject = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const response = await fetch(`/api/projects/${projectId}`);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to fetch project");
-      }
-
-      setProject(data.project);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
-    } finally {
-      setLoading(false);
-    }
-  }, [projectId]);
-
-  useEffect(() => {
-    fetchProject();
-  }, [fetchProject]);
 
   const handleClickTask = useCallback((taskId: string) => {
     setSelectedTaskId(taskId);
@@ -112,31 +91,16 @@ export function ProjectView() {
   const handleDeleteSelectedTask = useCallback(async () => {
     if (!selectedTaskId) return;
     await deleteSelectedTask();
-    deleteTaskFromList(selectedTaskId);
     setDetailModalOpen(false);
     setSelectedTaskId(null);
-    refetchTasks();
-  }, [selectedTaskId, deleteSelectedTask, deleteTaskFromList, refetchTasks]);
+  }, [selectedTaskId, deleteSelectedTask]);
 
-  const handleUpdateSelectedTask = useCallback(
-    async (...args: Parameters<typeof updateSelectedTask>) => {
-      const result = await updateSelectedTask(...args);
-      refetchTasks();
-      return result;
-    },
-    [updateSelectedTask, refetchTasks],
-  );
-
-  const handleDetailModalOpenChange = useCallback(
-    (open: boolean) => {
-      setDetailModalOpen(open);
-      if (!open) {
-        setSelectedTaskId(null);
-        refetchTasks();
-      }
-    },
-    [refetchTasks],
-  );
+  const handleDetailModalOpenChange = useCallback((open: boolean) => {
+    setDetailModalOpen(open);
+    if (!open) {
+      setSelectedTaskId(null);
+    }
+  }, []);
 
   const handleOpenCreateModal = useCallback((sectionId?: string | null) => {
     setCreateModalSectionId(sectionId ?? null);
@@ -167,10 +131,10 @@ export function ProjectView() {
     );
   }
 
-  if (error) {
+  if (projectError) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4">
-        <p className="text-secondary text-sm">{error}</p>
+        <p className="text-secondary text-sm">{projectError.message}</p>
         <Button variant="secondary" onClick={() => navigate({ to: "/" })}>
           Go back
         </Button>
@@ -266,7 +230,7 @@ export function ProjectView() {
         loading={taskLoading}
         sections={sections}
         availableTags={tags}
-        onUpdateTask={handleUpdateSelectedTask}
+        onUpdateTask={updateSelectedTask}
         onDeleteTask={handleDeleteSelectedTask}
         onCreateSubtask={createSubtask}
         onUpdateSubtask={updateSubtask}

@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { api } from "~/platform/query/api";
+import { queryKeys } from "~/platform/query/query-keys";
 import type { Subtask, Task, TaskUpdates } from "../types";
 
 interface TaskResponse {
@@ -10,218 +12,157 @@ interface SubtaskResponse {
 }
 
 export function useTask(projectId: string, taskId: string | null) {
-  const [task, setTask] = useState<Task | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const allTasksKey = queryKeys.tasks.all(projectId);
+  const detailKey = queryKeys.tasks.detail(projectId, taskId ?? "");
 
-  const fetchTask = useCallback(async () => {
-    if (!taskId) {
-      setTask(null);
-      return;
-    }
+  const {
+    data: task = null,
+    isLoading: loading,
+    error: queryError,
+  } = useQuery({
+    queryKey: detailKey,
+    queryFn: () => api<TaskResponse>(`/api/projects/${projectId}/tasks/${taskId}`),
+    select: (data) => data.task,
+    enabled: !!taskId,
+  });
 
-    try {
-      setLoading(true);
-      setError(null);
-
-      const response = await fetch(`/api/projects/${projectId}/tasks/${taskId}`);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to fetch task");
-      }
-
-      setTask(data.task);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
-    } finally {
-      setLoading(false);
-    }
-  }, [projectId, taskId]);
-
-  useEffect(() => {
-    fetchTask();
-  }, [fetchTask]);
-
-  const updateTask = useCallback(
-    async (updates: TaskUpdates): Promise<Task> => {
-      if (!taskId) {
-        throw new Error("No task selected");
-      }
-
-      const response = await fetch(`/api/projects/${projectId}/tasks/${taskId}`, {
+  const updateMutation = useMutation({
+    mutationFn: (updates: TaskUpdates) =>
+      api<TaskResponse>(`/api/projects/${projectId}/tasks/${taskId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updates),
-      });
-
-      const data: TaskResponse = await response.json();
-
-      if (!response.ok) {
-        throw new Error("Failed to update task");
-      }
-
-      setTask(data.task);
-      return data.task;
+      }),
+    onSuccess: (data) => {
+      queryClient.setQueryData<TaskResponse>(detailKey, data);
+      queryClient.invalidateQueries({ queryKey: allTasksKey });
     },
-    [projectId, taskId],
-  );
+  });
 
-  const deleteTask = useCallback(async () => {
-    if (!taskId) {
-      throw new Error("No task selected");
-    }
+  const deleteMutation = useMutation({
+    mutationFn: () => api<void>(`/api/projects/${projectId}/tasks/${taskId}`, { method: "DELETE" }),
+    onSuccess: () => {
+      queryClient.removeQueries({ queryKey: detailKey });
+      queryClient.invalidateQueries({ queryKey: allTasksKey });
+    },
+  });
 
-    const response = await fetch(`/api/projects/${projectId}/tasks/${taskId}`, {
-      method: "DELETE",
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || "Failed to delete task");
-    }
-
-    setTask(null);
-  }, [projectId, taskId]);
-
-  const createSubtask = useCallback(
-    async (title: string): Promise<Subtask> => {
-      if (!taskId) {
-        throw new Error("No task selected");
-      }
-
-      const response = await fetch(`/api/projects/${projectId}/tasks/${taskId}/subtasks`, {
+  const createSubtaskMutation = useMutation({
+    mutationFn: (title: string) =>
+      api<SubtaskResponse>(`/api/projects/${projectId}/tasks/${taskId}/subtasks`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title }),
+      }),
+    onSuccess: (data) => {
+      queryClient.setQueryData<TaskResponse>(detailKey, (old) => {
+        if (!old) return old;
+        return { task: { ...old.task, subtasks: [...old.task.subtasks, data.subtask] } };
       });
-
-      const data: SubtaskResponse = await response.json();
-
-      if (!response.ok) {
-        throw new Error("Failed to create subtask");
-      }
-
-      setTask((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          subtasks: [...prev.subtasks, data.subtask],
-        };
-      });
-
-      return data.subtask;
     },
-    [projectId, taskId],
-  );
+  });
 
-  const updateSubtask = useCallback(
-    async (
-      subtaskId: string,
-      updates: Partial<Pick<Subtask, "title" | "completed">>,
-    ): Promise<Subtask> => {
-      if (!taskId) {
-        throw new Error("No task selected");
-      }
-
-      const response = await fetch(
-        `/api/projects/${projectId}/tasks/${taskId}/subtasks/${subtaskId}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(updates),
-        },
-      );
-
-      const data: SubtaskResponse = await response.json();
-
-      if (!response.ok) {
-        throw new Error("Failed to update subtask");
-      }
-
-      setTask((prev) => {
-        if (!prev) return prev;
+  const updateSubtaskMutation = useMutation({
+    mutationFn: ({
+      subtaskId,
+      updates,
+    }: {
+      subtaskId: string;
+      updates: Partial<Pick<Subtask, "title" | "completed">>;
+    }) =>
+      api<SubtaskResponse>(`/api/projects/${projectId}/tasks/${taskId}/subtasks/${subtaskId}`, {
+        method: "PATCH",
+        body: JSON.stringify(updates),
+      }),
+    onSuccess: (data) => {
+      queryClient.setQueryData<TaskResponse>(detailKey, (old) => {
+        if (!old) return old;
         return {
-          ...prev,
-          subtasks: prev.subtasks.map((s) => (s.id === subtaskId ? data.subtask : s)),
-        };
-      });
-
-      return data.subtask;
-    },
-    [projectId, taskId],
-  );
-
-  const deleteSubtask = useCallback(
-    async (subtaskId: string) => {
-      if (!taskId) {
-        throw new Error("No task selected");
-      }
-
-      const response = await fetch(
-        `/api/projects/${projectId}/tasks/${taskId}/subtasks/${subtaskId}`,
-        {
-          method: "DELETE",
-        },
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to delete subtask");
-      }
-
-      setTask((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          subtasks: prev.subtasks.filter((s) => s.id !== subtaskId),
+          task: {
+            ...old.task,
+            subtasks: old.task.subtasks.map((s) => (s.id === data.subtask.id ? data.subtask : s)),
+          },
         };
       });
     },
-    [projectId, taskId],
-  );
+  });
 
-  const reorderSubtasks = useCallback(
-    async (subtaskIds: string[]) => {
-      if (!taskId) {
-        throw new Error("No task selected");
-      }
+  const deleteSubtaskMutation = useMutation({
+    mutationFn: (subtaskId: string) =>
+      api<void>(`/api/projects/${projectId}/tasks/${taskId}/subtasks/${subtaskId}`, {
+        method: "DELETE",
+      }),
+    onSuccess: (_data, subtaskId) => {
+      queryClient.setQueryData<TaskResponse>(detailKey, (old) => {
+        if (!old) return old;
+        return {
+          task: {
+            ...old.task,
+            subtasks: old.task.subtasks.filter((s) => s.id !== subtaskId),
+          },
+        };
+      });
+    },
+  });
 
-      const response = await fetch(`/api/projects/${projectId}/tasks/${taskId}/subtasks/reorder`, {
+  const reorderSubtasksMutation = useMutation({
+    mutationFn: (subtaskIds: string[]) =>
+      api<{ subtasks: Subtask[] }>(`/api/projects/${projectId}/tasks/${taskId}/subtasks/reorder`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ subtaskIds }),
-      });
-
-      const data: { subtasks: Subtask[] } = await response.json();
-
-      if (!response.ok) {
-        throw new Error("Failed to reorder subtasks");
-      }
-
-      setTask((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          subtasks: data.subtasks,
-        };
+      }),
+    onSuccess: (data) => {
+      queryClient.setQueryData<TaskResponse>(detailKey, (old) => {
+        if (!old) return old;
+        return { task: { ...old.task, subtasks: data.subtasks } };
       });
     },
-    [projectId, taskId],
-  );
+  });
+
+  const updateTask = async (updates: TaskUpdates): Promise<Task> => {
+    if (!taskId) throw new Error("No task selected");
+    const data = await updateMutation.mutateAsync(updates);
+    return data.task;
+  };
+
+  const deleteTask = async (): Promise<void> => {
+    if (!taskId) throw new Error("No task selected");
+    await deleteMutation.mutateAsync();
+  };
+
+  const createSubtask = async (title: string): Promise<Subtask> => {
+    if (!taskId) throw new Error("No task selected");
+    const data = await createSubtaskMutation.mutateAsync(title);
+    return data.subtask;
+  };
+
+  const updateSubtask = async (
+    subtaskId: string,
+    updates: Partial<Pick<Subtask, "title" | "completed">>,
+  ): Promise<Subtask> => {
+    if (!taskId) throw new Error("No task selected");
+    const data = await updateSubtaskMutation.mutateAsync({ subtaskId, updates });
+    return data.subtask;
+  };
+
+  const deleteSubtask = async (subtaskId: string): Promise<void> => {
+    if (!taskId) throw new Error("No task selected");
+    await deleteSubtaskMutation.mutateAsync(subtaskId);
+  };
+
+  const reorderSubtasks = async (subtaskIds: string[]): Promise<void> => {
+    if (!taskId) throw new Error("No task selected");
+    await reorderSubtasksMutation.mutateAsync(subtaskIds);
+  };
 
   return {
     task,
     loading,
-    error,
+    error: queryError?.message ?? null,
     updateTask,
     deleteTask,
     createSubtask,
     updateSubtask,
     deleteSubtask,
     reorderSubtasks,
-    refetch: fetchTask,
   };
 }
