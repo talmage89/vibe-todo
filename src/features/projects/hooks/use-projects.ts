@@ -30,7 +30,27 @@ export const useProjects = () => {
         method: "POST",
         body: JSON.stringify(input),
       }),
-    onSuccess: () => {
+    onMutate: async (input) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.projects.all });
+      const previous = queryClient.getQueryData<ProjectsResponse>(queryKeys.projects.all);
+      queryClient.setQueryData<ProjectsResponse>(queryKeys.projects.all, (old) => {
+        if (!old) return old;
+        const optimistic: Project = {
+          id: `temp-${crypto.randomUUID()}`,
+          name: input.name,
+          color: input.color ?? null,
+          defaultView: "LIST",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        return { projects: [...old.projects, optimistic] };
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(queryKeys.projects.all, context.previous);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
     },
   });
