@@ -22,6 +22,7 @@ import type { Section } from "../types";
 
 interface SectionItemProps {
   section: Section;
+  sortableId?: string;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
   onUpdate: (name: string) => Promise<unknown>;
@@ -32,6 +33,7 @@ interface SectionItemProps {
 
 export function SectionItem({
   section,
+  sortableId,
   isCollapsed,
   onToggleCollapse,
   onUpdate,
@@ -46,7 +48,7 @@ export function SectionItem({
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: section.id,
+    id: sortableId ?? section.id,
   });
 
   const style = {

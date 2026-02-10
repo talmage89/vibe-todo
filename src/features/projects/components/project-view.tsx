@@ -1,3 +1,12 @@
+import {
+  DndContext,
+  DragOverlay,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { Cog6ToothIcon, PlusIcon } from "@heroicons/react/24/outline";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
@@ -13,6 +22,7 @@ import { TaskCreateModal } from "~/features/tasks/components/task-create-modal";
 import { TaskDetailModal } from "~/features/tasks/components/task-detail-modal";
 import { useProjectTasks } from "~/features/tasks/hooks/use-project-tasks";
 import { useTags } from "~/features/tasks/hooks/use-tags";
+import { useTaskDragDrop } from "~/features/tasks/hooks/use-task-drag-drop";
 import type { TaskStatus } from "~/features/tasks/types";
 import { api } from "~/platform/query/api";
 import { queryKeys } from "~/platform/query/query-keys";
@@ -46,11 +56,35 @@ export function ProjectView() {
     reorderSections,
   } = useSections(projectId);
 
-  const { tasksBySectionId, taskCountBySectionId, createTask, updateTask } =
+  const { tasksBySectionId, taskCountBySectionId, createTask, updateTask, reorderTasks } =
     useProjectTasks(projectId);
 
   const { tags } = useTags(projectId);
   const [filterTagIds, setFilterTagIds] = useState<string[]>([]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
+  const {
+    activeTask,
+    currentTaskMap,
+    collisionDetection,
+    handleDragStart,
+    handleDragOver,
+    handleDragEnd,
+    handleDragCancel,
+  } = useTaskDragDrop({
+    tasksBySectionId,
+    sections,
+    onReorderSections: reorderSections,
+    onReorderTasks: reorderTasks,
+  });
 
   const handleClickTask = useCallback((taskId: string) => {
     setSelectedTaskId(taskId);
@@ -96,9 +130,10 @@ export function ProjectView() {
 
   const renderSectionContent = useCallback(
     (sectionId: string, _isCollapsed: boolean) => {
-      const sectionTasks = tasksBySectionId[sectionId] ?? [];
+      const sectionTasks = currentTaskMap[sectionId] ?? [];
       return (
         <SectionTaskList
+          sectionId={sectionId}
           tasks={sectionTasks}
           onToggleStatus={handleToggleStatus}
           onClickTask={handleClickTask}
@@ -106,7 +141,7 @@ export function ProjectView() {
         />
       );
     },
-    [tasksBySectionId, handleToggleStatus, handleClickTask, handleQuickAdd],
+    [currentTaskMap, handleToggleStatus, handleClickTask, handleQuickAdd],
   );
 
   if (loading) {
@@ -132,7 +167,7 @@ export function ProjectView() {
     return null;
   }
 
-  const unsectionedTasks = tasksBySectionId.__unsectioned ?? [];
+  const unsectionedTasks = currentTaskMap.__unsectioned ?? [];
 
   return (
     <div className="flex h-full flex-col">
@@ -175,30 +210,47 @@ export function ProjectView() {
         )}
       </header>
       <main className="flex-1 overflow-y-auto px-4 py-3">
-        {unsectionedTasks.length > 0 && (
-          <div className="mb-4">
-            <SectionTaskList
-              tasks={unsectionedTasks}
-              onToggleStatus={handleToggleStatus}
-              onClickTask={handleClickTask}
-              onQuickAdd={handleQuickAdd(null)}
-            />
-          </div>
-        )}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={collisionDetection}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDragEnd={handleDragEnd}
+          onDragCancel={handleDragCancel}
+        >
+          {unsectionedTasks.length > 0 && (
+            <div className="mb-4">
+              <SectionTaskList
+                sectionId="__unsectioned"
+                tasks={unsectionedTasks}
+                onToggleStatus={handleToggleStatus}
+                onClickTask={handleClickTask}
+                onQuickAdd={handleQuickAdd(null)}
+              />
+            </div>
+          )}
 
-        {sectionsLoading ? (
-          <SkeletonTaskList count={5} />
-        ) : (
-          <SectionList
-            sections={sections}
-            onCreateSection={createSection}
-            onUpdateSection={updateSection}
-            onDeleteSection={deleteSection}
-            onReorderSections={reorderSections}
-            taskCountBySectionId={taskCountBySectionId}
-            renderSectionContent={renderSectionContent}
-          />
-        )}
+          {sectionsLoading ? (
+            <SkeletonTaskList count={5} />
+          ) : (
+            <SectionList
+              sections={sections}
+              onCreateSection={createSection}
+              onUpdateSection={updateSection}
+              onDeleteSection={deleteSection}
+              taskCountBySectionId={taskCountBySectionId}
+              renderSectionContent={renderSectionContent}
+            />
+          )}
+
+          <DragOverlay>
+            {activeTask ? (
+              <div className="rounded border border-border bg-background px-3 py-1.5 text-primary text-sm shadow-lg">
+                {activeTask.title}
+              </div>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
       </main>
 
       <TaskCreateModal
