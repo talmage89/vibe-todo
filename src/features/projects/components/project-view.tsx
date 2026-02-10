@@ -16,6 +16,7 @@ import { SkeletonTaskList } from "~/components/ui/skeleton";
 import { Spinner } from "~/components/ui/spinner";
 import { SectionList } from "~/features/sections/components/section-list";
 import { useSections } from "~/features/sections/hooks/use-sections";
+import { KanbanBoard } from "~/features/tasks/components/kanban-board";
 import { SectionTaskList } from "~/features/tasks/components/section-task-list";
 import { TagFilter } from "~/features/tasks/components/tag-filter";
 import { TaskCreateModal } from "~/features/tasks/components/task-create-modal";
@@ -50,7 +51,7 @@ export function ProjectView() {
     select: (data) => data.project,
   });
 
-  const { view, setView } = useProjectView(projectId, project?.defaultView ?? DefaultView.LIST);
+  const { view, setView } = useProjectView(projectId, project?.defaultView ?? DefaultView.KANBAN);
 
   const {
     sections,
@@ -61,7 +62,7 @@ export function ProjectView() {
     reorderSections,
   } = useSections(projectId);
 
-  const { tasksBySectionId, taskCountBySectionId, createTask, updateTask, reorderTasks } =
+  const { tasks, tasksBySectionId, taskCountBySectionId, createTask, updateTask, reorderTasks } =
     useProjectTasks(projectId);
 
   const { tags } = useTags(projectId);
@@ -282,11 +283,7 @@ export function ProjectView() {
             </DndContext>
           </div>
         </div>
-        {view === DefaultView.KANBAN && (
-          <div className="flex h-full items-center justify-center px-4 py-3">
-            <p className="text-secondary text-sm">Board view coming soon.</p>
-          </div>
-        )}
+        {view === DefaultView.KANBAN && <KanbanBoard tasks={tasks} onClickTask={handleClickTask} />}
       </main>
 
       <TaskCreateModal
