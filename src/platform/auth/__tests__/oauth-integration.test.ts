@@ -3,13 +3,13 @@ import { Elysia } from "elysia";
 import { exportJWK, generateKeyPair, SignJWT } from "jose";
 import { verifySignedJson } from "../crypto";
 
-mock.module("/Users/talmage/code/vibe/todo/todo/src/platform/auth/user.ts", () => {
+mock.module("../user", () => {
   return {
     upsertAccount: async () => ({ id: "account_1", userId: "user_1" }),
   };
 });
 
-mock.module("/Users/talmage/code/vibe/todo/todo/src/platform/auth/session.ts", () => {
+mock.module("../session", () => {
   return {
     createSession: async () => ({
       value: "mock_session_token",
