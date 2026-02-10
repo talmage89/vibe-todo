@@ -37,16 +37,49 @@ export function useTask(projectId: string, taskId: string | null) {
         method: "PATCH",
         body: JSON.stringify(updates),
       }),
-    onSuccess: (data) => {
-      queryClient.setQueryData<TaskResponse>(detailKey, data);
+    onMutate: async (updates) => {
+      await queryClient.cancelQueries({ queryKey: detailKey });
+      await queryClient.cancelQueries({ queryKey: allTasksKey });
+      const previousDetail = queryClient.getQueryData<TaskResponse>(detailKey);
+      const previousList = queryClient.getQueryData(allTasksKey);
+      queryClient.setQueryData<TaskResponse>(detailKey, (old) => {
+        if (!old) return old;
+        return { task: { ...old.task, ...updates } };
+      });
+      queryClient.setQueryData<{ tasks: Task[] }>(allTasksKey, (old) => {
+        if (!old) return old;
+        return {
+          tasks: old.tasks.map((t) => (t.id === taskId ? { ...t, ...updates } : t)),
+        };
+      });
+      return { previousDetail, previousList };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previousDetail) queryClient.setQueryData(detailKey, context.previousDetail);
+      if (context?.previousList) queryClient.setQueryData(allTasksKey, context.previousList);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: detailKey });
       queryClient.invalidateQueries({ queryKey: allTasksKey });
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: () => api<void>(`/api/projects/${projectId}/tasks/${taskId}`, { method: "DELETE" }),
-    onSuccess: () => {
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: allTasksKey });
+      const previousList = queryClient.getQueryData(allTasksKey);
+      queryClient.setQueryData<{ tasks: Task[] }>(allTasksKey, (old) => {
+        if (!old) return old;
+        return { tasks: old.tasks.filter((t) => t.id !== taskId) };
+      });
       queryClient.removeQueries({ queryKey: detailKey });
+      return { previousList };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previousList) queryClient.setQueryData(allTasksKey, context.previousList);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: allTasksKey });
     },
   });
@@ -57,7 +90,28 @@ export function useTask(projectId: string, taskId: string | null) {
         method: "POST",
         body: JSON.stringify({ title }),
       }),
-    onSuccess: () => {
+    onMutate: async (title) => {
+      await queryClient.cancelQueries({ queryKey: detailKey });
+      const previous = queryClient.getQueryData<TaskResponse>(detailKey);
+      queryClient.setQueryData<TaskResponse>(detailKey, (old) => {
+        if (!old) return old;
+        const optimistic: Subtask = {
+          id: `temp-${crypto.randomUUID()}`,
+          title,
+          completed: false,
+          position: old.task.subtasks.length,
+          taskId: taskId ?? "",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        return { task: { ...old.task, subtasks: [...old.task.subtasks, optimistic] } };
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(detailKey, context.previous);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: detailKey });
     },
   });
@@ -74,7 +128,24 @@ export function useTask(projectId: string, taskId: string | null) {
         method: "PATCH",
         body: JSON.stringify(updates),
       }),
-    onSuccess: () => {
+    onMutate: async ({ subtaskId, updates }) => {
+      await queryClient.cancelQueries({ queryKey: detailKey });
+      const previous = queryClient.getQueryData<TaskResponse>(detailKey);
+      queryClient.setQueryData<TaskResponse>(detailKey, (old) => {
+        if (!old) return old;
+        return {
+          task: {
+            ...old.task,
+            subtasks: old.task.subtasks.map((s) => (s.id === subtaskId ? { ...s, ...updates } : s)),
+          },
+        };
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(detailKey, context.previous);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: detailKey });
     },
   });
@@ -84,7 +155,24 @@ export function useTask(projectId: string, taskId: string | null) {
       api<void>(`/api/projects/${projectId}/tasks/${taskId}/subtasks/${subtaskId}`, {
         method: "DELETE",
       }),
-    onSuccess: () => {
+    onMutate: async (subtaskId) => {
+      await queryClient.cancelQueries({ queryKey: detailKey });
+      const previous = queryClient.getQueryData<TaskResponse>(detailKey);
+      queryClient.setQueryData<TaskResponse>(detailKey, (old) => {
+        if (!old) return old;
+        return {
+          task: {
+            ...old.task,
+            subtasks: old.task.subtasks.filter((s) => s.id !== subtaskId),
+          },
+        };
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(detailKey, context.previous);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: detailKey });
     },
   });

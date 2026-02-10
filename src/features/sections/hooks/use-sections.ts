@@ -31,7 +31,27 @@ export function useSections(projectId: string) {
         method: "POST",
         body: JSON.stringify({ name }),
       }),
-    onSuccess: () => {
+    onMutate: async (name) => {
+      await queryClient.cancelQueries({ queryKey: sectionsKey });
+      const previous = queryClient.getQueryData<SectionsResponse>(sectionsKey);
+      queryClient.setQueryData<SectionsResponse>(sectionsKey, (old) => {
+        if (!old) return old;
+        const optimistic: Section = {
+          id: `temp-${crypto.randomUUID()}`,
+          name,
+          position: old.sections.length,
+          projectId,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        return { sections: [...old.sections, optimistic] };
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(sectionsKey, context.previous);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: sectionsKey });
     },
   });
@@ -42,7 +62,21 @@ export function useSections(projectId: string) {
         method: "PATCH",
         body: JSON.stringify({ name }),
       }),
-    onSuccess: () => {
+    onMutate: async ({ sectionId, name }) => {
+      await queryClient.cancelQueries({ queryKey: sectionsKey });
+      const previous = queryClient.getQueryData<SectionsResponse>(sectionsKey);
+      queryClient.setQueryData<SectionsResponse>(sectionsKey, (old) => {
+        if (!old) return old;
+        return {
+          sections: old.sections.map((s) => (s.id === sectionId ? { ...s, name } : s)),
+        };
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(sectionsKey, context.previous);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: sectionsKey });
     },
   });
@@ -50,7 +84,19 @@ export function useSections(projectId: string) {
   const deleteMutation = useMutation({
     mutationFn: (sectionId: string) =>
       api<void>(`/api/projects/${projectId}/sections/${sectionId}`, { method: "DELETE" }),
-    onSuccess: () => {
+    onMutate: async (sectionId) => {
+      await queryClient.cancelQueries({ queryKey: sectionsKey });
+      const previous = queryClient.getQueryData<SectionsResponse>(sectionsKey);
+      queryClient.setQueryData<SectionsResponse>(sectionsKey, (old) => {
+        if (!old) return old;
+        return { sections: old.sections.filter((s) => s.id !== sectionId) };
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(sectionsKey, context.previous);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: sectionsKey });
     },
   });
