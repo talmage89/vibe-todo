@@ -1,7 +1,6 @@
 import {
   CalendarDaysIcon,
   CalendarIcon,
-  ChevronDownIcon,
   ChevronRightIcon,
   Cog6ToothIcon,
   FolderIcon,
@@ -14,6 +13,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { type KeyboardEvent, useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/components/ui/cn";
+import { SkeletonProjectList } from "~/components/ui/skeleton";
 import { ProjectCreateModal } from "~/features/projects/components/project-create-modal";
 import { useProjects } from "~/features/projects/hooks/use-projects";
 
@@ -28,6 +28,9 @@ const navItems = [
   { path: "/today", label: "Today", icon: CalendarIcon },
   { path: "/upcoming", label: "Upcoming", icon: CalendarDaysIcon },
 ] as const;
+
+const navLinkClass =
+  "flex items-center gap-2 rounded border-l-2 border-transparent px-3 py-1.5 font-medium text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2";
 
 export const Sidebar = ({ isOpen, onClose, onAddTask }: SidebarProps) => {
   const routerState = useRouterState();
@@ -51,12 +54,12 @@ export const Sidebar = ({ isOpen, onClose, onAddTask }: SidebarProps) => {
   const getFocusableItems = useCallback(() => {
     const items: { type: "nav" | "project" | "action" | "settings"; id: string }[] = [];
 
-    if (onAddTask) items.push({ type: "action", id: "add-task" });
-    items.push({ type: "action", id: "add-project" });
-
     for (const item of navItems) {
       items.push({ type: "nav", id: item.path });
     }
+
+    if (onAddTask) items.push({ type: "action", id: "add-task" });
+    items.push({ type: "action", id: "add-project" });
 
     items.push({ type: "action", id: "projects-toggle" });
 
@@ -143,7 +146,7 @@ export const Sidebar = ({ isOpen, onClose, onAddTask }: SidebarProps) => {
           isOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
-        <div className="flex h-14 items-center justify-between border-border border-b px-4">
+        <div className="flex h-12 items-center justify-between border-border border-b px-4">
           <Link to="/" className="font-semibold text-lg text-primary">
             Todo
           </Link>
@@ -165,32 +168,7 @@ export const Sidebar = ({ isOpen, onClose, onAddTask }: SidebarProps) => {
           role="navigation"
           aria-label="Main navigation"
         >
-          <div className="mb-4 flex gap-2">
-            {onAddTask && (
-              <Button
-                ref={(el) => setItemRef(refIndex++, el)}
-                variant="outline"
-                size="sm"
-                onClick={onAddTask}
-                className="flex-1"
-              >
-                <PlusIcon className="h-4 w-4" />
-                Task
-              </Button>
-            )}
-            <Button
-              ref={(el) => setItemRef(refIndex++, el)}
-              variant="outline"
-              size="sm"
-              onClick={() => setCreateModalOpen(true)}
-              className="flex-1"
-            >
-              <FolderIcon className="h-4 w-4" />
-              Project
-            </Button>
-          </div>
-
-          <ul className="space-y-1" role="list">
+          <ul className="space-y-0.5" role="list">
             {navItems.map((item) => {
               const isActive = currentPath === item.path;
               const Icon = item.icon;
@@ -201,10 +179,9 @@ export const Sidebar = ({ isOpen, onClose, onAddTask }: SidebarProps) => {
                     ref={(el) => setItemRef(currentRefIndex, el)}
                     to={item.path}
                     className={cn(
-                      "flex items-center gap-3 rounded px-3 py-2 font-medium text-sm transition-colors",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2",
+                      navLinkClass,
                       isActive
-                        ? "bg-background text-primary"
+                        ? "border-accent bg-background text-primary"
                         : "text-secondary hover:bg-background hover:text-primary",
                     )}
                     onClick={onClose}
@@ -218,13 +195,38 @@ export const Sidebar = ({ isOpen, onClose, onAddTask }: SidebarProps) => {
             })}
           </ul>
 
+          <div className="mt-3 flex gap-2">
+            {onAddTask && (
+              <Button
+                ref={(el) => setItemRef(refIndex++, el)}
+                variant="secondary"
+                size="sm"
+                onClick={onAddTask}
+                className="flex-1"
+              >
+                <PlusIcon className="h-4 w-4" />
+                Task
+              </Button>
+            )}
+            <Button
+              ref={(el) => setItemRef(refIndex++, el)}
+              variant="secondary"
+              size="sm"
+              onClick={() => setCreateModalOpen(true)}
+              className="flex-1"
+            >
+              <FolderIcon className="h-4 w-4" />
+              Project
+            </Button>
+          </div>
+
           <div className="mt-6">
             <button
               ref={(el) => setItemRef(refIndex++, el)}
               type="button"
               onClick={() => setProjectsExpanded(!projectsExpanded)}
               className={cn(
-                "flex w-full items-center justify-between rounded px-3 py-1.5 font-medium text-secondary text-xs uppercase tracking-wider transition-colors",
+                "flex w-full items-center justify-between rounded px-3 py-1.5 font-medium text-secondary text-xs transition-colors",
                 "hover:bg-background hover:text-primary",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2",
               )}
@@ -232,55 +234,64 @@ export const Sidebar = ({ isOpen, onClose, onAddTask }: SidebarProps) => {
               aria-controls="projects-list"
             >
               <span>Projects</span>
-              {projectsExpanded ? (
-                <ChevronDownIcon className="h-4 w-4" />
-              ) : (
-                <ChevronRightIcon className="h-4 w-4" />
-              )}
+              <ChevronRightIcon
+                className={cn(
+                  "h-4 w-4 transition-transform duration-150",
+                  projectsExpanded && "rotate-90",
+                )}
+              />
             </button>
 
-            {projectsExpanded && (
-              <ul id="projects-list" className="mt-1 space-y-1" role="list">
-                {loading ? (
-                  <li className="px-3 py-2 text-secondary text-sm">Loading...</li>
-                ) : projects.length === 0 ? (
-                  <li className="px-3 py-2 text-secondary text-sm">No projects yet</li>
-                ) : (
-                  projects.map((project) => {
-                    const isActive = currentPath === `/project/${project.id}`;
-                    const currentRefIndex = refIndex++;
-                    return (
-                      <li key={project.id}>
-                        <Link
-                          ref={(el) => setItemRef(currentRefIndex, el)}
-                          to={`/project/${project.id}`}
-                          className={cn(
-                            "flex items-center gap-3 rounded px-3 py-2 font-medium text-sm transition-colors",
-                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2",
-                            isActive
-                              ? "bg-background text-primary"
-                              : "text-secondary hover:bg-background hover:text-primary",
-                          )}
-                          onClick={onClose}
-                          aria-current={isActive ? "page" : undefined}
-                        >
-                          {project.color ? (
-                            <span
-                              className="h-3 w-3 shrink-0 rounded-full"
-                              style={{ backgroundColor: project.color }}
-                              aria-hidden="true"
-                            />
-                          ) : (
-                            <HashtagIcon className="h-5 w-5" />
-                          )}
-                          <span className="truncate">{project.name}</span>
-                        </Link>
-                      </li>
-                    );
-                  })
-                )}
-              </ul>
-            )}
+            <div
+              className={cn(
+                "grid transition-[grid-template-rows] duration-150 ease-out",
+                projectsExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+              )}
+            >
+              <div className="overflow-hidden">
+                <ul id="projects-list" className="mt-1 space-y-0.5" role="list">
+                  {loading ? (
+                    <li>
+                      <SkeletonProjectList count={3} />
+                    </li>
+                  ) : projects.length === 0 ? (
+                    <li className="px-3 py-1.5 text-secondary text-sm">No projects yet</li>
+                  ) : (
+                    projects.map((project) => {
+                      const isActive = currentPath === `/project/${project.id}`;
+                      const currentRefIndex = refIndex++;
+                      return (
+                        <li key={project.id}>
+                          <Link
+                            ref={(el) => setItemRef(currentRefIndex, el)}
+                            to={`/project/${project.id}`}
+                            className={cn(
+                              navLinkClass,
+                              isActive
+                                ? "border-accent bg-background text-primary"
+                                : "text-secondary hover:bg-background hover:text-primary",
+                            )}
+                            onClick={onClose}
+                            aria-current={isActive ? "page" : undefined}
+                          >
+                            {project.color ? (
+                              <span
+                                className="h-2.5 w-2.5 shrink-0 rounded-full"
+                                style={{ backgroundColor: project.color }}
+                                aria-hidden="true"
+                              />
+                            ) : (
+                              <HashtagIcon className="h-4 w-4 shrink-0 text-secondary" />
+                            )}
+                            <span className="truncate">{project.name}</span>
+                          </Link>
+                        </li>
+                      );
+                    })
+                  )}
+                </ul>
+              </div>
+            </div>
           </div>
         </nav>
 
@@ -289,10 +300,9 @@ export const Sidebar = ({ isOpen, onClose, onAddTask }: SidebarProps) => {
             ref={(el) => setItemRef(refIndex++, el)}
             to="/settings"
             className={cn(
-              "flex items-center gap-3 rounded px-3 py-2 font-medium text-sm transition-colors",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2",
+              navLinkClass,
               currentPath === "/settings"
-                ? "bg-background text-primary"
+                ? "border-accent bg-background text-primary"
                 : "text-secondary hover:bg-background hover:text-primary",
             )}
           >
