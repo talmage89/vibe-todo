@@ -82,6 +82,42 @@ export function useProjectTasks(projectId: string) {
     },
   });
 
+  const reorderMutation = useMutation({
+    mutationFn: ({ taskIds, sectionId }: { taskIds: string[]; sectionId?: string | null }) =>
+      api<TasksResponse>(`/api/projects/${projectId}/tasks/reorder`, {
+        method: "POST",
+        body: JSON.stringify({ taskIds, sectionId }),
+      }),
+    onMutate: async ({ taskIds, sectionId }) => {
+      await queryClient.cancelQueries({ queryKey: allTasksKey });
+      const previous = queryClient.getQueryData<TasksResponse>(allTasksKey);
+      queryClient.setQueryData<TasksResponse>(allTasksKey, (old) => {
+        if (!old) return old;
+        const updated = old.tasks.map((t) => {
+          const orderIndex = taskIds.indexOf(t.id);
+          if (orderIndex !== -1) {
+            return {
+              ...t,
+              position: orderIndex,
+              sectionId: sectionId === undefined ? t.sectionId : sectionId,
+            };
+          }
+          return t;
+        });
+        return { tasks: updated };
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(allTasksKey, context.previous);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: allTasksKey });
+    },
+  });
+
   const createTask = async (data: CreateTaskData): Promise<Task> => {
     const result = await createMutation.mutateAsync(data);
     return result.task;
@@ -99,6 +135,10 @@ export function useProjectTasks(projectId: string) {
     await deleteMutation.mutateAsync(taskId);
   };
 
+  const reorderTasks = async (taskIds: string[], sectionId?: string | null): Promise<void> => {
+    await reorderMutation.mutateAsync({ taskIds, sectionId });
+  };
+
   return {
     tasks,
     loading,
@@ -108,5 +148,6 @@ export function useProjectTasks(projectId: string) {
     createTask,
     updateTask,
     deleteTask,
+    reorderTasks,
   };
 }
