@@ -18,54 +18,51 @@ export async function verifyProjectAccess(userId: string, projectId: string) {
 }
 
 export async function verifyTaskAccess(userId: string, projectId: string, taskId: string) {
-  await verifyProjectAccess(userId, projectId);
-
   const task = await db.task.findUnique({
     where: { id: taskId },
+    include: { project: { select: { userId: true } } },
   });
 
-  if (!task) {
-    throw new NotFoundError("Task not found");
+  if (!task || task.projectId !== projectId) {
+    throw new NotFoundError("Task not found in this project");
   }
 
-  if (task.projectId !== projectId) {
-    throw new NotFoundError("Task not found in this project");
+  if (task.project.userId !== userId) {
+    throw new AuthorizationError("You do not have access to this project");
   }
 
   return task;
 }
 
 export async function verifySectionAccess(userId: string, projectId: string, sectionId: string) {
-  await verifyProjectAccess(userId, projectId);
-
   const section = await db.section.findUnique({
     where: { id: sectionId },
+    include: { project: { select: { userId: true } } },
   });
 
-  if (!section) {
-    throw new NotFoundError("Section not found");
+  if (!section || section.projectId !== projectId) {
+    throw new NotFoundError("Section not found in this project");
   }
 
-  if (section.projectId !== projectId) {
-    throw new NotFoundError("Section not found in this project");
+  if (section.project.userId !== userId) {
+    throw new AuthorizationError("You do not have access to this project");
   }
 
   return section;
 }
 
 export async function verifyTagAccess(userId: string, projectId: string, tagId: string) {
-  await verifyProjectAccess(userId, projectId);
-
   const tag = await db.tag.findUnique({
     where: { id: tagId },
+    include: { project: { select: { userId: true } } },
   });
 
-  if (!tag) {
-    throw new NotFoundError("Tag not found");
+  if (!tag || tag.projectId !== projectId) {
+    throw new NotFoundError("Tag not found in this project");
   }
 
-  if (tag.projectId !== projectId) {
-    throw new NotFoundError("Tag not found in this project");
+  if (tag.project.userId !== userId) {
+    throw new AuthorizationError("You do not have access to this project");
   }
 
   return tag;
@@ -77,18 +74,21 @@ export async function verifySubtaskAccess(
   taskId: string,
   subtaskId: string,
 ) {
-  await verifyTaskAccess(userId, projectId, taskId);
-
   const subtask = await db.subtask.findUnique({
     where: { id: subtaskId },
+    include: { task: { include: { project: { select: { userId: true } } } } },
   });
 
-  if (!subtask) {
-    throw new NotFoundError("Subtask not found");
+  if (!subtask || subtask.taskId !== taskId) {
+    throw new NotFoundError("Subtask not found in this task");
   }
 
-  if (subtask.taskId !== taskId) {
-    throw new NotFoundError("Subtask not found in this task");
+  if (subtask.task.projectId !== projectId) {
+    throw new NotFoundError("Task not found in this project");
+  }
+
+  if (subtask.task.project.userId !== userId) {
+    throw new AuthorizationError("You do not have access to this project");
   }
 
   return subtask;
