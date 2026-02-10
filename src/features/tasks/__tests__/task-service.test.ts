@@ -48,7 +48,7 @@ describe("TaskService", () => {
     test("queries with correct params", async () => {
       resetMocks();
       mockTask.findMany.mockResolvedValueOnce([]);
-      await listTasks("proj_1");
+      const result = await listTasks("proj_1");
       expect(mockTask.findMany).toHaveBeenCalledWith({
         where: {
           projectId: "proj_1",
@@ -58,7 +58,9 @@ describe("TaskService", () => {
         },
         include: taskInclude,
         orderBy: { position: "asc" },
+        take: 51,
       });
+      expect(result).toEqual({ tasks: [], nextCursor: undefined, hasMore: false });
     });
 
     test("passes filters through", async () => {
@@ -69,6 +71,7 @@ describe("TaskService", () => {
         where: { projectId: "proj_1", sectionId: "sec_1", status: "TODO", priority: "HIGH" },
         include: taskInclude,
         orderBy: { position: "asc" },
+        take: 51,
       });
     });
   });

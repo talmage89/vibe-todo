@@ -14,12 +14,12 @@ export const registerApiRoutes = (app: Elysia) => {
       .onError(({ error, set }) => {
         if (error instanceof ApiError) {
           set.status = error.status;
-          return { success: false, error: error.message };
+          return { success: false, error: error.message, code: error.code };
         }
 
         console.error("API Error:", error);
         set.status = 500;
-        return { success: false, error: "Internal server error" };
+        return { success: false, error: "Internal server error", code: "INTERNAL_ERROR" };
       })
       .use(userRoutes)
       .use(projectRoutes)

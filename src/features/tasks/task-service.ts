@@ -28,20 +28,40 @@ const taskInclude = {
   tags: true,
 } as const;
 
-export async function listTasks(
-  projectId: string,
-  filters?: { sectionId?: string; status?: TaskStatus; priority?: TaskPriority },
-) {
-  return db.task.findMany({
+const DEFAULT_PAGE_SIZE = 50;
+
+type ListTasksOptions = {
+  sectionId?: string;
+  status?: TaskStatus;
+  priority?: TaskPriority;
+  cursor?: string;
+  limit?: number;
+};
+
+export async function listTasks(projectId: string, options?: ListTasksOptions) {
+  const limit = Math.min(options?.limit ?? DEFAULT_PAGE_SIZE, 100);
+
+  const tasks = await db.task.findMany({
     where: {
       projectId,
-      sectionId: filters?.sectionId,
-      status: filters?.status,
-      priority: filters?.priority,
+      sectionId: options?.sectionId,
+      status: options?.status,
+      priority: options?.priority,
     },
     include: taskInclude,
     orderBy: { position: "asc" },
+    take: limit + 1,
+    ...(options?.cursor && {
+      cursor: { id: options.cursor },
+      skip: 1,
+    }),
   });
+
+  const hasMore = tasks.length > limit;
+  const items = hasMore ? tasks.slice(0, limit) : tasks;
+  const nextCursor = hasMore ? items[items.length - 1]?.id : undefined;
+
+  return { tasks: items, nextCursor, hasMore };
 }
 
 export async function createTask(userId: string, projectId: string, data: CreateTaskData) {
