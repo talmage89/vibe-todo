@@ -6,7 +6,6 @@ import { TaskPriority, TaskStatus } from "~/platform/db/generated";
 import * as taskService from "./task-service";
 
 const getTasksQuerySchema = z.object({
-  sectionId: z.string().optional(),
   status: z.enum(TaskStatus).optional(),
   priority: z.enum(TaskPriority).optional(),
   cursor: z.string().optional(),
@@ -36,7 +35,6 @@ const createTaskSchema = z.object({
   dueDate: z.coerce.date().optional(),
   priority: z.enum(TaskPriority).optional(),
   status: z.enum(TaskStatus).optional(),
-  sectionId: z.string().nullable().optional(),
   tagIds: z.array(z.string()).optional(),
 });
 
@@ -76,7 +74,6 @@ const updateTaskSchema = z.object({
   dueDate: z.coerce.date().nullable().optional(),
   priority: z.enum(TaskPriority).optional(),
   status: z.enum(TaskStatus).optional(),
-  sectionId: z.string().nullable().optional(),
   tagIds: z.array(z.string()).optional(),
 });
 
@@ -88,12 +85,8 @@ type UpdateTaskHandlerProps = {
 
 async function updateTaskHandler({ user, params, body }: UpdateTaskHandlerProps) {
   const authenticatedUser = requireAuth(user);
-  const existingTask = await verifyTaskAccess(
-    authenticatedUser.id,
-    params.projectId,
-    params.taskId,
-  );
-  const task = await taskService.updateTask(params.projectId, params.taskId, existingTask, body);
+  await verifyTaskAccess(authenticatedUser.id, params.projectId, params.taskId);
+  const task = await taskService.updateTask(params.projectId, params.taskId, body);
   return { success: true, task };
 }
 
@@ -111,7 +104,6 @@ async function deleteTaskHandler({ user, params }: DeleteTaskHandlerProps) {
 
 const reorderTasksSchema = z.object({
   taskIds: z.array(z.string()).min(1, "At least one task ID is required"),
-  sectionId: z.string().nullable().optional(),
 });
 
 type ReorderTasksHandlerProps = {
@@ -123,11 +115,7 @@ type ReorderTasksHandlerProps = {
 async function reorderTasksHandler({ user, params, body }: ReorderTasksHandlerProps) {
   const authenticatedUser = requireAuth(user);
   await verifyProjectAccess(authenticatedUser.id, params.projectId);
-  const tasks = await taskService.reorderProjectTasks(
-    params.projectId,
-    body.sectionId ?? null,
-    body.taskIds,
-  );
+  const tasks = await taskService.reorderProjectTasks(params.projectId, body.taskIds);
   return { success: true, tasks };
 }
 

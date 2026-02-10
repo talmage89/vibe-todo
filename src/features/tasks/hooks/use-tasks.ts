@@ -11,26 +11,17 @@ interface TaskResponse {
   task: Task;
 }
 
-export function useTasks(projectId: string, sectionId?: string | null) {
+export function useTasks(projectId: string) {
   const queryClient = useQueryClient();
-  const tasksKey = queryKeys.tasks.list(projectId, { sectionId });
   const allTasksKey = queryKeys.tasks.all(projectId);
-
-  const buildUrl = () => {
-    const params = new URLSearchParams();
-    if (sectionId !== undefined) {
-      params.set("sectionId", sectionId ?? "");
-    }
-    return `/api/projects/${projectId}/tasks${params.toString() ? `?${params}` : ""}`;
-  };
 
   const {
     data: tasks = [],
     isLoading: loading,
     error: queryError,
   } = useQuery({
-    queryKey: tasksKey,
-    queryFn: () => api<TasksResponse>(buildUrl()),
+    queryKey: allTasksKey,
+    queryFn: () => api<TasksResponse>(`/api/projects/${projectId}/tasks`),
     select: (data) => data.tasks,
   });
 
@@ -41,9 +32,9 @@ export function useTasks(projectId: string, sectionId?: string | null) {
         body: JSON.stringify(data),
       }),
     onMutate: async (data) => {
-      await queryClient.cancelQueries({ queryKey: tasksKey });
-      const previous = queryClient.getQueryData<TasksResponse>(tasksKey);
-      queryClient.setQueryData<TasksResponse>(tasksKey, (old) => {
+      await queryClient.cancelQueries({ queryKey: allTasksKey });
+      const previous = queryClient.getQueryData<TasksResponse>(allTasksKey);
+      queryClient.setQueryData<TasksResponse>(allTasksKey, (old) => {
         if (!old) return old;
         const now = new Date().toISOString();
         const optimistic: Task = {
@@ -55,7 +46,6 @@ export function useTasks(projectId: string, sectionId?: string | null) {
           status: data.status ?? "TODO",
           position: old.tasks.length,
           projectId,
-          sectionId: data.sectionId ?? null,
           createdAt: now,
           updatedAt: now,
           subtasks: [],
@@ -66,7 +56,7 @@ export function useTasks(projectId: string, sectionId?: string | null) {
       return { previous };
     },
     onError: (_err, _vars, context) => {
-      if (context?.previous) queryClient.setQueryData(tasksKey, context.previous);
+      if (context?.previous) queryClient.setQueryData(allTasksKey, context.previous);
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: allTasksKey });
@@ -80,10 +70,10 @@ export function useTasks(projectId: string, sectionId?: string | null) {
         body: JSON.stringify(data),
       }),
     onMutate: async ({ taskId, data }) => {
-      await queryClient.cancelQueries({ queryKey: tasksKey });
-      const previous = queryClient.getQueryData<TasksResponse>(tasksKey);
+      await queryClient.cancelQueries({ queryKey: allTasksKey });
+      const previous = queryClient.getQueryData<TasksResponse>(allTasksKey);
       const { dueDate, tagIds, ...fields } = data;
-      queryClient.setQueryData<TasksResponse>(tasksKey, (old) => {
+      queryClient.setQueryData<TasksResponse>(allTasksKey, (old) => {
         if (!old) return old;
         return {
           tasks: old.tasks.map((t) =>
@@ -100,7 +90,7 @@ export function useTasks(projectId: string, sectionId?: string | null) {
       return { previous };
     },
     onError: (_err, _vars, context) => {
-      if (context?.previous) queryClient.setQueryData(tasksKey, context.previous);
+      if (context?.previous) queryClient.setQueryData(allTasksKey, context.previous);
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: allTasksKey });
@@ -111,16 +101,16 @@ export function useTasks(projectId: string, sectionId?: string | null) {
     mutationFn: (taskId: string) =>
       api<void>(`/api/projects/${projectId}/tasks/${taskId}`, { method: "DELETE" }),
     onMutate: async (taskId) => {
-      await queryClient.cancelQueries({ queryKey: tasksKey });
-      const previous = queryClient.getQueryData<TasksResponse>(tasksKey);
-      queryClient.setQueryData<TasksResponse>(tasksKey, (old) => {
+      await queryClient.cancelQueries({ queryKey: allTasksKey });
+      const previous = queryClient.getQueryData<TasksResponse>(allTasksKey);
+      queryClient.setQueryData<TasksResponse>(allTasksKey, (old) => {
         if (!old) return old;
         return { tasks: old.tasks.filter((t) => t.id !== taskId) };
       });
       return { previous };
     },
     onError: (_err, _vars, context) => {
-      if (context?.previous) queryClient.setQueryData(tasksKey, context.previous);
+      if (context?.previous) queryClient.setQueryData(allTasksKey, context.previous);
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: allTasksKey });
@@ -128,30 +118,20 @@ export function useTasks(projectId: string, sectionId?: string | null) {
   });
 
   const reorderMutation = useMutation({
-    mutationFn: ({
-      taskIds,
-      targetSectionId,
-    }: {
-      taskIds: string[];
-      targetSectionId?: string | null;
-    }) =>
+    mutationFn: (taskIds: string[]) =>
       api<TasksResponse>(`/api/projects/${projectId}/tasks/reorder`, {
         method: "POST",
-        body: JSON.stringify({ taskIds, sectionId: targetSectionId }),
+        body: JSON.stringify({ taskIds }),
       }),
-    onMutate: async ({ taskIds, targetSectionId }) => {
-      await queryClient.cancelQueries({ queryKey: tasksKey });
-      const previous = queryClient.getQueryData<TasksResponse>(tasksKey);
-      queryClient.setQueryData<TasksResponse>(tasksKey, (old) => {
+    onMutate: async (taskIds) => {
+      await queryClient.cancelQueries({ queryKey: allTasksKey });
+      const previous = queryClient.getQueryData<TasksResponse>(allTasksKey);
+      queryClient.setQueryData<TasksResponse>(allTasksKey, (old) => {
         if (!old) return old;
         const updated = old.tasks.map((t) => {
           const orderIndex = taskIds.indexOf(t.id);
           if (orderIndex !== -1) {
-            return {
-              ...t,
-              position: orderIndex,
-              sectionId: targetSectionId === undefined ? t.sectionId : targetSectionId,
-            };
+            return { ...t, position: orderIndex };
           }
           return t;
         });
@@ -160,7 +140,7 @@ export function useTasks(projectId: string, sectionId?: string | null) {
       return { previous };
     },
     onError: (_err, _vars, context) => {
-      if (context?.previous) queryClient.setQueryData(tasksKey, context.previous);
+      if (context?.previous) queryClient.setQueryData(allTasksKey, context.previous);
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: allTasksKey });
@@ -181,11 +161,8 @@ export function useTasks(projectId: string, sectionId?: string | null) {
     await deleteMutation.mutateAsync(taskId);
   };
 
-  const reorderTasks = async (
-    taskIds: string[],
-    targetSectionId?: string | null,
-  ): Promise<void> => {
-    await reorderMutation.mutateAsync({ taskIds, targetSectionId });
+  const reorderTasks = async (taskIds: string[]): Promise<void> => {
+    await reorderMutation.mutateAsync(taskIds);
   };
 
   return {

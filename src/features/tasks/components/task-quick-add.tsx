@@ -5,7 +5,6 @@ import { Input } from "~/components/ui/input";
 
 interface TaskQuickAddProps {
   onSubmit: (title: string) => Promise<void>;
-  sectionId?: string | null;
 }
 
 export function TaskQuickAdd({ onSubmit }: TaskQuickAddProps) {

@@ -47,13 +47,11 @@ A modern, minimal todo application focused on personal productivity with selecti
 ```
 Workspace (implicit, per-user)
 └── Project
-    └── Section (optional grouping within project)
-        └── Task
-            └── Subtask (single level of nesting)
+    └── Task
+        └── Subtask (single level of nesting)
 ```
 
 - **Projects**: Top-level containers for related work
-- **Sections**: Optional groupings within a project (e.g., "Phase 1", "Backlog")
 - **Tasks**: Primary work items
 - **Subtasks**: Checklist-style items nested under a task (one level deep)
 
@@ -168,7 +166,6 @@ Reusable task structures for recurring workflows.
 
 - Share entire project (includes all tasks/subtasks)
 - Share individual task (includes subtasks)
-- Cannot share sections independently
 
 ---
 

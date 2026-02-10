@@ -21,16 +21,9 @@ interface TaskCreateModalProps {
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: CreateTaskData) => Promise<void>;
   tags: Tag[];
-  sectionId?: string | null;
 }
 
-export function TaskCreateModal({
-  open,
-  onOpenChange,
-  onSubmit,
-  tags,
-  sectionId,
-}: TaskCreateModalProps) {
+export function TaskCreateModal({ open, onOpenChange, onSubmit, tags }: TaskCreateModalProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState("");
@@ -75,7 +68,6 @@ export function TaskCreateModal({
 
         const data: CreateTaskData = {
           title: trimmedTitle,
-          sectionId,
         };
 
         if (description.trim()) {
@@ -102,7 +94,7 @@ export function TaskCreateModal({
         setLoading(false);
       }
     },
-    [title, description, dueDate, priority, selectedTagIds, sectionId, onSubmit, handleOpenChange],
+    [title, description, dueDate, priority, selectedTagIds, onSubmit, handleOpenChange],
   );
 
   return (
