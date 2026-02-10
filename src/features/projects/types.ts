@@ -5,6 +5,7 @@ const projectSelect = {
   id: true,
   name: true,
   color: true,
+  defaultView: true,
   createdAt: true,
   updatedAt: true,
 } satisfies Prisma.ProjectSelect;

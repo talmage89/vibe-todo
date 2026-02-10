@@ -1,10 +1,12 @@
 import { verifyProjectAccess } from "~/platform/api/access";
 import { ValidationError } from "~/platform/auth/errors";
 import { db } from "~/platform/db";
+import type { DefaultView } from "~/platform/db/generated";
 
 type UpdateProjectData = {
   name?: string;
   color?: string | null;
+  defaultView?: DefaultView;
 };
 
 export async function listProjects(userId: string) {
@@ -44,6 +46,7 @@ export async function updateProject(userId: string, projectId: string, data: Upd
     data: {
       name: data.name?.trim(),
       color: data.color,
+      defaultView: data.defaultView,
     },
   });
 }
