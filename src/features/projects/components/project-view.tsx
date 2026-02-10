@@ -24,13 +24,18 @@ import { useProjectTasks } from "~/features/tasks/hooks/use-project-tasks";
 import { useTags } from "~/features/tasks/hooks/use-tags";
 import { useTaskDragDrop } from "~/features/tasks/hooks/use-task-drag-drop";
 import type { TaskStatus } from "~/features/tasks/types";
+import { DefaultView } from "~/platform/db/generated";
 import { api } from "~/platform/query/api";
 import { queryKeys } from "~/platform/query/query-keys";
+import { useProjectView } from "../hooks/use-project-view";
 import type { Project } from "../types";
+import { ViewToggle } from "./view-toggle";
 
 export function ProjectView() {
   const { projectId } = useParams({ from: "/project/$projectId" });
   const navigate = useNavigate();
+
+  const { view, setView } = useProjectView(projectId);
 
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [createModalSectionId, setCreateModalSectionId] = useState<string | null>(null);
@@ -183,24 +188,27 @@ export function ProjectView() {
             )}
             <h1 className="font-semibold text-lg text-primary">{project.name}</h1>
           </div>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => handleOpenCreateModal()}
-              title="Create task"
-            >
-              <PlusIcon className="h-4 w-4" />
-              Add task
-            </Button>
-            <Link
-              to="/project/$projectId/settings"
-              params={{ projectId }}
-              className="rounded p-1.5 text-secondary transition-colors hover:bg-surface hover:text-primary"
-              title="Project settings"
-            >
-              <Cog6ToothIcon className="h-5 w-5" />
-            </Link>
+          <div className="flex items-center gap-3">
+            <ViewToggle value={view} onChange={setView} />
+            <div className="flex items-center gap-1">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => handleOpenCreateModal()}
+                title="Create task"
+              >
+                <PlusIcon className="h-4 w-4" />
+                Add task
+              </Button>
+              <Link
+                to="/project/$projectId/settings"
+                params={{ projectId }}
+                className="rounded p-1.5 text-secondary transition-colors hover:bg-surface hover:text-primary"
+                title="Project settings"
+              >
+                <Cog6ToothIcon className="h-5 w-5" />
+              </Link>
+            </div>
           </div>
         </div>
         {tags.length > 0 && (
@@ -209,48 +217,57 @@ export function ProjectView() {
           </div>
         )}
       </header>
-      <main className="flex-1 overflow-y-auto px-4 py-3">
-        <DndContext
-          sensors={sensors}
-          collisionDetection={collisionDetection}
-          onDragStart={handleDragStart}
-          onDragOver={handleDragOver}
-          onDragEnd={handleDragEnd}
-          onDragCancel={handleDragCancel}
-        >
-          {unsectionedTasks.length > 0 && (
-            <div className="mb-4">
-              <SectionTaskList
-                sectionId="__unsectioned"
-                tasks={unsectionedTasks}
-                onToggleStatus={handleToggleStatus}
-                onClickTask={handleClickTask}
-                onQuickAdd={handleQuickAdd(null)}
-              />
-            </div>
-          )}
+      <main className="flex-1 overflow-y-auto">
+        <div className={view === DefaultView.LIST ? "block" : "hidden"}>
+          <div className="px-4 py-3">
+            <DndContext
+              sensors={sensors}
+              collisionDetection={collisionDetection}
+              onDragStart={handleDragStart}
+              onDragOver={handleDragOver}
+              onDragEnd={handleDragEnd}
+              onDragCancel={handleDragCancel}
+            >
+              {unsectionedTasks.length > 0 && (
+                <div className="mb-4">
+                  <SectionTaskList
+                    sectionId="__unsectioned"
+                    tasks={unsectionedTasks}
+                    onToggleStatus={handleToggleStatus}
+                    onClickTask={handleClickTask}
+                    onQuickAdd={handleQuickAdd(null)}
+                  />
+                </div>
+              )}
 
-          {sectionsLoading ? (
-            <SkeletonTaskList count={5} />
-          ) : (
-            <SectionList
-              sections={sections}
-              onCreateSection={createSection}
-              onUpdateSection={updateSection}
-              onDeleteSection={deleteSection}
-              taskCountBySectionId={taskCountBySectionId}
-              renderSectionContent={renderSectionContent}
-            />
-          )}
+              {sectionsLoading ? (
+                <SkeletonTaskList count={5} />
+              ) : (
+                <SectionList
+                  sections={sections}
+                  onCreateSection={createSection}
+                  onUpdateSection={updateSection}
+                  onDeleteSection={deleteSection}
+                  taskCountBySectionId={taskCountBySectionId}
+                  renderSectionContent={renderSectionContent}
+                />
+              )}
 
-          <DragOverlay>
-            {activeTask ? (
-              <div className="rounded border border-border bg-background px-3 py-1.5 text-primary text-sm shadow-lg">
-                {activeTask.title}
-              </div>
-            ) : null}
-          </DragOverlay>
-        </DndContext>
+              <DragOverlay>
+                {activeTask ? (
+                  <div className="rounded border border-border bg-background px-3 py-1.5 text-primary text-sm shadow-lg">
+                    {activeTask.title}
+                  </div>
+                ) : null}
+              </DragOverlay>
+            </DndContext>
+          </div>
+        </div>
+        {view === DefaultView.KANBAN && (
+          <div className="flex h-full items-center justify-center px-4 py-3">
+            <p className="text-secondary text-sm">Board view coming soon.</p>
+          </div>
+        )}
       </main>
 
       <TaskCreateModal
