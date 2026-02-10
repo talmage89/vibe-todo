@@ -53,7 +53,6 @@ export async function exportUserData(userId: string) {
       },
       projects: {
         include: {
-          sections: true,
           tasks: {
             include: { subtasks: true, tags: true },
           },

@@ -10,11 +10,10 @@ const mockTask = {
   update: fn(),
   delete: fn(),
 };
-const mockSection = { findUnique: fn() };
 const mockTagDb = { findMany: fn() };
 
 mock.module("~/platform/db", () => ({
-  db: { task: mockTask, section: mockSection, tag: mockTagDb },
+  db: { task: mockTask, tag: mockTagDb },
 }));
 
 const mockGetNextTaskPosition = fn();
@@ -23,8 +22,6 @@ const mockReorderTasks = fn();
 mock.module("~/platform/api/position", () => ({
   getNextTaskPosition: mockGetNextTaskPosition,
   reorderTasks: mockReorderTasks,
-  getNextSectionPosition: mock(),
-  reorderSections: mock(),
   getNextSubtaskPosition: mock(),
   reorderSubtasks: mock(),
 }));
@@ -35,7 +32,6 @@ const { ValidationError } = await import("~/platform/auth/errors");
 
 function resetMocks() {
   for (const f of Object.values(mockTask)) f.mockClear();
-  for (const f of Object.values(mockSection)) f.mockClear();
   for (const f of Object.values(mockTagDb)) f.mockClear();
   mockGetNextTaskPosition.mockClear();
   mockReorderTasks.mockClear();
@@ -52,7 +48,6 @@ describe("TaskService", () => {
       expect(mockTask.findMany).toHaveBeenCalledWith({
         where: {
           projectId: "proj_1",
-          sectionId: undefined,
           status: undefined,
           priority: undefined,
         },
@@ -66,9 +61,9 @@ describe("TaskService", () => {
     test("passes filters through", async () => {
       resetMocks();
       mockTask.findMany.mockResolvedValueOnce([]);
-      await listTasks("proj_1", { sectionId: "sec_1", status: "TODO", priority: "HIGH" });
+      await listTasks("proj_1", { status: "TODO", priority: "HIGH" });
       expect(mockTask.findMany).toHaveBeenCalledWith({
-        where: { projectId: "proj_1", sectionId: "sec_1", status: "TODO", priority: "HIGH" },
+        where: { projectId: "proj_1", status: "TODO", priority: "HIGH" },
         include: taskInclude,
         orderBy: { position: "asc" },
         take: 51,
@@ -83,7 +78,7 @@ describe("TaskService", () => {
       mockTask.create.mockResolvedValueOnce({ id: "task_new" });
 
       await createTask("user_1", "proj_1", { title: "New" });
-      expect(mockGetNextTaskPosition).toHaveBeenCalledWith("proj_1", null);
+      expect(mockGetNextTaskPosition).toHaveBeenCalledWith("proj_1");
       expect(mockTask.create).toHaveBeenCalledWith({
         data: {
           title: "New",
@@ -94,29 +89,9 @@ describe("TaskService", () => {
           position: 5,
           userId: "user_1",
           projectId: "proj_1",
-          sectionId: null,
         },
         include: taskInclude,
       });
-    });
-
-    test("validates section belongs to project", async () => {
-      resetMocks();
-      mockSection.findUnique.mockResolvedValueOnce({ id: "sec_1", projectId: "proj_other" });
-
-      await expect(
-        createTask("user_1", "proj_1", { title: "Task", sectionId: "sec_1" }),
-      ).rejects.toBeInstanceOf(ValidationError);
-      expect(mockTask.create).not.toHaveBeenCalled();
-    });
-
-    test("throws when section not found", async () => {
-      resetMocks();
-      mockSection.findUnique.mockResolvedValueOnce(null);
-
-      await expect(
-        createTask("user_1", "proj_1", { title: "Task", sectionId: "sec_missing" }),
-      ).rejects.toBeInstanceOf(ValidationError);
     });
 
     test("validates tags belong to project", async () => {
@@ -141,18 +116,6 @@ describe("TaskService", () => {
       await createTask("user_1", "proj_1", { title: "Tagged", tagIds: ["tag_1", "tag_2"] });
       const args = mockTask.create.mock.calls[0] as unknown as [{ data: Record<string, unknown> }];
       expect(args[0].data.tags).toEqual({ connect: [{ id: "tag_1" }, { id: "tag_2" }] });
-    });
-
-    test("creates task with valid section", async () => {
-      resetMocks();
-      mockSection.findUnique.mockResolvedValueOnce({ id: "sec_1", projectId: "proj_1" });
-      mockGetNextTaskPosition.mockResolvedValueOnce(2);
-      mockTask.create.mockResolvedValueOnce({ id: "task_new" });
-
-      await createTask("user_1", "proj_1", { title: "Sectioned", sectionId: "sec_1" });
-      expect(mockGetNextTaskPosition).toHaveBeenCalledWith("proj_1", "sec_1");
-      const args = mockTask.create.mock.calls[0] as unknown as [{ data: Record<string, unknown> }];
-      expect(args[0].data.sectionId).toBe("sec_1");
     });
   });
 
@@ -188,36 +151,8 @@ describe("TaskService", () => {
       resetMocks();
       mockTask.update.mockResolvedValueOnce({ id: "task_1", title: "Updated" });
 
-      const result = await updateTask(
-        "proj_1",
-        "task_1",
-        { position: 0, sectionId: null },
-        { title: "Updated" },
-      );
+      const result = await updateTask("proj_1", "task_1", { title: "Updated" });
       expect(result.id).toBe("task_1");
-    });
-
-    test("validates section on update", async () => {
-      resetMocks();
-      mockSection.findUnique.mockResolvedValueOnce(null);
-
-      await expect(
-        updateTask(
-          "proj_1",
-          "task_1",
-          { position: 0, sectionId: null },
-          { sectionId: "sec_missing" },
-        ),
-      ).rejects.toBeInstanceOf(ValidationError);
-    });
-
-    test("validates section belongs to correct project", async () => {
-      resetMocks();
-      mockSection.findUnique.mockResolvedValueOnce({ id: "sec_1", projectId: "proj_other" });
-
-      await expect(
-        updateTask("proj_1", "task_1", { position: 0, sectionId: null }, { sectionId: "sec_1" }),
-      ).rejects.toBeInstanceOf(ValidationError);
     });
 
     test("validates tags on update", async () => {
@@ -225,43 +160,8 @@ describe("TaskService", () => {
       mockTagDb.findMany.mockResolvedValueOnce([{ id: "tag_1" }]);
 
       await expect(
-        updateTask(
-          "proj_1",
-          "task_1",
-          { position: 0, sectionId: null },
-          { tagIds: ["tag_1", "tag_missing"] },
-        ),
+        updateTask("proj_1", "task_1", { tagIds: ["tag_1", "tag_missing"] }),
       ).rejects.toBeInstanceOf(ValidationError);
-    });
-
-    test("recalculates position when section changes", async () => {
-      resetMocks();
-      mockSection.findUnique.mockResolvedValueOnce({ id: "sec_2", projectId: "proj_1" });
-      mockGetNextTaskPosition.mockResolvedValueOnce(7);
-      mockTask.update.mockResolvedValueOnce({ id: "task_1" });
-
-      await updateTask(
-        "proj_1",
-        "task_1",
-        { position: 0, sectionId: "sec_1" },
-        { sectionId: "sec_2" },
-      );
-      expect(mockGetNextTaskPosition).toHaveBeenCalledWith("proj_1", "sec_2");
-      const args = mockTask.update.mock.calls[0] as unknown as [{ data: Record<string, unknown> }];
-      expect(args[0].data.position).toBe(7);
-    });
-
-    test("does not recalculate position when section unchanged", async () => {
-      resetMocks();
-      mockTask.update.mockResolvedValueOnce({ id: "task_1" });
-
-      await updateTask(
-        "proj_1",
-        "task_1",
-        { position: 3, sectionId: "sec_1" },
-        { title: "Same section" },
-      );
-      expect(mockGetNextTaskPosition).not.toHaveBeenCalled();
     });
 
     test("sets tags with set operation", async () => {
@@ -272,12 +172,7 @@ describe("TaskService", () => {
       ]);
       mockTask.update.mockResolvedValueOnce({ id: "task_1" });
 
-      await updateTask(
-        "proj_1",
-        "task_1",
-        { position: 0, sectionId: null },
-        { tagIds: ["tag_1", "tag_2"] },
-      );
+      await updateTask("proj_1", "task_1", { tagIds: ["tag_1", "tag_2"] });
       const args = mockTask.update.mock.calls[0] as unknown as [{ data: Record<string, unknown> }];
       expect(args[0].data.tags).toEqual({ set: [{ id: "tag_1" }, { id: "tag_2" }] });
     });
@@ -286,23 +181,9 @@ describe("TaskService", () => {
       resetMocks();
       mockTask.update.mockResolvedValueOnce({ id: "task_1" });
 
-      await updateTask("proj_1", "task_1", { position: 0, sectionId: null }, { tagIds: [] });
+      await updateTask("proj_1", "task_1", { tagIds: [] });
       const args = mockTask.update.mock.calls[0] as unknown as [{ data: Record<string, unknown> }];
       expect(args[0].data.tags).toEqual({ set: [] });
-    });
-
-    test("allows moving to null section", async () => {
-      resetMocks();
-      mockGetNextTaskPosition.mockResolvedValueOnce(0);
-      mockTask.update.mockResolvedValueOnce({ id: "task_1" });
-
-      await updateTask(
-        "proj_1",
-        "task_1",
-        { position: 2, sectionId: "sec_1" },
-        { sectionId: null },
-      );
-      expect(mockGetNextTaskPosition).toHaveBeenCalledWith("proj_1", null);
     });
   });
 
@@ -319,16 +200,8 @@ describe("TaskService", () => {
       resetMocks();
       mockTask.findMany.mockResolvedValueOnce([{ id: "task_2" }, { id: "task_1" }]);
 
-      await reorderProjectTasks("proj_1", "sec_1", ["task_2", "task_1"]);
-      expect(mockReorderTasks).toHaveBeenCalledWith("proj_1", "sec_1", ["task_2", "task_1"]);
-    });
-
-    test("handles null section", async () => {
-      resetMocks();
-      mockTask.findMany.mockResolvedValueOnce([]);
-
-      await reorderProjectTasks("proj_1", null, ["task_1"]);
-      expect(mockReorderTasks).toHaveBeenCalledWith("proj_1", null, ["task_1"]);
+      await reorderProjectTasks("proj_1", ["task_2", "task_1"]);
+      expect(mockReorderTasks).toHaveBeenCalledWith("proj_1", ["task_2", "task_1"]);
     });
   });
 });

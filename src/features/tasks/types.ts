@@ -12,7 +12,6 @@ const taskSelect = {
   status: true,
   position: true,
   projectId: true,
-  sectionId: true,
   createdAt: true,
   updatedAt: true,
   subtasks: {
@@ -42,7 +41,7 @@ export type Subtask = Task["subtasks"][number];
 export type Tag = Task["tags"][number];
 
 export type TaskUpdates = Partial<
-  Pick<Task, "title" | "description" | "dueDate" | "priority" | "status" | "sectionId">
+  Pick<Task, "title" | "description" | "dueDate" | "priority" | "status">
 > & {
   tagIds?: string[];
 };
@@ -53,6 +52,5 @@ export type CreateTaskData = {
   dueDate?: Date;
   priority?: Task["priority"];
   status?: Task["status"];
-  sectionId?: string | null;
   tagIds?: string[];
 };

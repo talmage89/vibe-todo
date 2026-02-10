@@ -18,7 +18,6 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Skeleton, SkeletonText } from "~/components/ui/skeleton";
-import type { Section } from "~/features/sections/types";
 import { useSubtasks } from "../hooks/use-subtasks";
 import { useTask } from "../hooks/use-task";
 import type { Tag } from "../types";
@@ -35,7 +34,6 @@ interface TaskDetailModalProps {
   onOpenChange: (open: boolean) => void;
   projectId: string;
   taskId: string | null;
-  sections: Section[];
   availableTags?: Tag[];
   onDeleted?: () => void;
 }
@@ -54,14 +52,11 @@ const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
   { value: TaskStatus.DONE, label: "Done" },
 ];
 
-const NO_SECTION_VALUE = "__none__";
-
 export function TaskDetailModal({
   open,
   onOpenChange,
   projectId,
   taskId,
-  sections,
   availableTags = [],
   onDeleted,
 }: TaskDetailModalProps) {
@@ -119,7 +114,7 @@ export function TaskDetailModal({
                   onSave={(description) => updateTask({ description })}
                 />
 
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label className="font-medium text-secondary text-xs">Status</label>
                     <Select
@@ -152,28 +147,6 @@ export function TaskDetailModal({
                         {PRIORITY_OPTIONS.map((option) => (
                           <SelectItem key={option.value} value={option.value}>
                             {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="font-medium text-secondary text-xs">Section</label>
-                    <Select
-                      value={task.sectionId ?? NO_SECTION_VALUE}
-                      onValueChange={(value) =>
-                        updateTask({ sectionId: value === NO_SECTION_VALUE ? null : value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={NO_SECTION_VALUE}>No section</SelectItem>
-                        {sections.map((section) => (
-                          <SelectItem key={section.id} value={section.id}>
-                            {section.name}
                           </SelectItem>
                         ))}
                       </SelectContent>

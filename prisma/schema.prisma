@@ -103,31 +103,12 @@ model Project {
 
   collaborations  Collaboration[]
   shareLinks      ShareLink[]
-  sections        Section[]
   tasks           Task[]
   tags            Tag[]
   defaultForUsers User[]          @relation("DefaultProject")
 
   @@index([userId])
   @@map("projects")
-}
-
-model Section {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  name     String
-  position Int
-
-  projectId String
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
-  tasks Task[]
-
-  @@index([projectId])
-  @@index([projectId, position])
-  @@map("sections")
 }
 
 enum TaskPriority {
@@ -161,15 +142,12 @@ model Task {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   projectId String
   project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  sectionId String?
-  section   Section? @relation(fields: [sectionId], references: [id], onDelete: SetNull)
 
   subtasks Subtask[]
   tags     Tag[]
 
   @@index([userId])
   @@index([projectId])
-  @@index([sectionId])
   @@index([projectId, position])
   @@index([userId, status])
   @@index([userId, dueDate])

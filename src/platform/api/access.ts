@@ -34,23 +34,6 @@ export async function verifyTaskAccess(userId: string, projectId: string, taskId
   return task;
 }
 
-export async function verifySectionAccess(userId: string, projectId: string, sectionId: string) {
-  const section = await db.section.findUnique({
-    where: { id: sectionId },
-    include: { project: { select: { userId: true } } },
-  });
-
-  if (!section || section.projectId !== projectId) {
-    throw new NotFoundError("Section not found in this project");
-  }
-
-  if (section.project.userId !== userId) {
-    throw new AuthorizationError("You do not have access to this project");
-  }
-
-  return section;
-}
-
 export async function verifyTagAccess(userId: string, projectId: string, tagId: string) {
   const tag = await db.tag.findUnique({
     where: { id: tagId },

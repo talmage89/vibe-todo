@@ -14,10 +14,8 @@ import { useCallback, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { SkeletonTaskList } from "~/components/ui/skeleton";
 import { Spinner } from "~/components/ui/spinner";
-import { SectionList } from "~/features/sections/components/section-list";
-import { useSections } from "~/features/sections/hooks/use-sections";
 import { KanbanBoard } from "~/features/tasks/components/kanban-board";
-import { SectionTaskList } from "~/features/tasks/components/section-task-list";
+import { TaskList } from "~/features/tasks/components/section-task-list";
 import { TagFilter } from "~/features/tasks/components/tag-filter";
 import { TaskCreateModal } from "~/features/tasks/components/task-create-modal";
 import { TaskDetailModal } from "~/features/tasks/components/task-detail-modal";
@@ -37,7 +35,6 @@ export function ProjectView() {
   const navigate = useNavigate();
 
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [createModalSectionId, setCreateModalSectionId] = useState<string | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
@@ -54,16 +51,12 @@ export function ProjectView() {
   const { view, setView } = useProjectView(projectId, project?.defaultView ?? DefaultView.KANBAN);
 
   const {
-    sections,
-    loading: sectionsLoading,
-    createSection,
-    updateSection,
-    deleteSection,
-    reorderSections,
-  } = useSections(projectId);
-
-  const { tasks, tasksBySectionId, taskCountBySectionId, createTask, updateTask, reorderTasks } =
-    useProjectTasks(projectId);
+    tasks,
+    loading: tasksLoading,
+    createTask,
+    updateTask,
+    reorderTasks,
+  } = useProjectTasks(projectId);
 
   const { tags } = useTags(projectId);
   const [filterTagIds, setFilterTagIds] = useState<string[]>([]);
@@ -77,20 +70,11 @@ export function ProjectView() {
     }),
   );
 
-  const {
-    activeTask,
-    currentTaskMap,
-    collisionDetection,
-    handleDragStart,
-    handleDragOver,
-    handleDragEnd,
-    handleDragCancel,
-  } = useTaskDragDrop({
-    tasksBySectionId,
-    sections,
-    onReorderSections: reorderSections,
-    onReorderTasks: reorderTasks,
-  });
+  const { activeTask, collisionDetection, handleDragStart, handleDragEnd, handleDragCancel } =
+    useTaskDragDrop({
+      tasks,
+      onReorderTasks: reorderTasks,
+    });
 
   const handleClickTask = useCallback((taskId: string) => {
     setSelectedTaskId(taskId);
@@ -120,8 +104,8 @@ export function ProjectView() {
   );
 
   const handleQuickAdd = useCallback(
-    (sectionId: string | null) => async (title: string) => {
-      await createTask({ title, sectionId });
+    async (title: string) => {
+      await createTask({ title });
     },
     [createTask],
   );
@@ -143,29 +127,6 @@ export function ProjectView() {
   const handleTaskDeleted = useCallback(() => {
     setSelectedTaskId(null);
   }, []);
-
-  const handleOpenCreateModal = useCallback((sectionId?: string | null) => {
-    setCreateModalSectionId(sectionId ?? null);
-    setCreateModalOpen(true);
-  }, []);
-
-  const renderSectionContent = useCallback(
-    (sectionId: string, _isCollapsed: boolean) => {
-      const sectionTasks = currentTaskMap[sectionId] ?? [];
-      return (
-        <SectionTaskList
-          sectionId={sectionId}
-          tasks={sectionTasks}
-          onToggleStatus={handleToggleStatus}
-          onUpdateTask={handleUpdateTask}
-          onClickTask={handleClickTask}
-          onQuickAdd={handleQuickAdd(sectionId)}
-          availableTags={tags}
-        />
-      );
-    },
-    [currentTaskMap, handleToggleStatus, handleUpdateTask, handleClickTask, handleQuickAdd, tags],
-  );
 
   if (loading) {
     return (
@@ -190,8 +151,6 @@ export function ProjectView() {
     return null;
   }
 
-  const unsectionedTasks = currentTaskMap.__unsectioned ?? [];
-
   return (
     <div className="flex h-full flex-col">
       <header className="border-border border-b">
@@ -212,7 +171,7 @@ export function ProjectView() {
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={() => handleOpenCreateModal()}
+                onClick={() => setCreateModalOpen(true)}
                 title="Create task"
               >
                 <PlusIcon className="h-4 w-4" />
@@ -238,49 +197,34 @@ export function ProjectView() {
       <main className="flex-1 overflow-y-auto">
         <div className={view === DefaultView.LIST ? "block" : "hidden"}>
           <div className="px-4 py-3">
-            <DndContext
-              sensors={sensors}
-              collisionDetection={collisionDetection}
-              onDragStart={handleDragStart}
-              onDragOver={handleDragOver}
-              onDragEnd={handleDragEnd}
-              onDragCancel={handleDragCancel}
-            >
-              {unsectionedTasks.length > 0 && (
-                <div className="mb-4">
-                  <SectionTaskList
-                    sectionId="__unsectioned"
-                    tasks={unsectionedTasks}
-                    onToggleStatus={handleToggleStatus}
-                    onUpdateTask={handleUpdateTask}
-                    onClickTask={handleClickTask}
-                    onQuickAdd={handleQuickAdd(null)}
-                    availableTags={tags}
-                  />
-                </div>
-              )}
-
-              {sectionsLoading ? (
-                <SkeletonTaskList count={5} />
-              ) : (
-                <SectionList
-                  sections={sections}
-                  onCreateSection={createSection}
-                  onUpdateSection={updateSection}
-                  onDeleteSection={deleteSection}
-                  taskCountBySectionId={taskCountBySectionId}
-                  renderSectionContent={renderSectionContent}
+            {tasksLoading ? (
+              <SkeletonTaskList count={5} />
+            ) : (
+              <DndContext
+                sensors={sensors}
+                collisionDetection={collisionDetection}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+                onDragCancel={handleDragCancel}
+              >
+                <TaskList
+                  tasks={tasks}
+                  onToggleStatus={handleToggleStatus}
+                  onUpdateTask={handleUpdateTask}
+                  onClickTask={handleClickTask}
+                  onQuickAdd={handleQuickAdd}
+                  availableTags={tags}
                 />
-              )}
 
-              <DragOverlay>
-                {activeTask ? (
-                  <div className="rounded border border-border bg-background px-3 py-1.5 text-primary text-sm shadow-lg">
-                    {activeTask.title}
-                  </div>
-                ) : null}
-              </DragOverlay>
-            </DndContext>
+                <DragOverlay>
+                  {activeTask ? (
+                    <div className="rounded border border-border bg-background px-3 py-1.5 text-primary text-sm shadow-lg">
+                      {activeTask.title}
+                    </div>
+                  ) : null}
+                </DragOverlay>
+              </DndContext>
+            )}
           </div>
         </div>
         {view === DefaultView.KANBAN && (
@@ -297,7 +241,6 @@ export function ProjectView() {
         onOpenChange={setCreateModalOpen}
         onSubmit={handleCreateTaskSubmit}
         tags={tags}
-        sectionId={createModalSectionId}
       />
 
       <TaskDetailModal
@@ -305,7 +248,6 @@ export function ProjectView() {
         onOpenChange={handleDetailModalOpenChange}
         projectId={projectId}
         taskId={selectedTaskId}
-        sections={sections}
         availableTags={tags}
         onDeleted={handleTaskDeleted}
       />
