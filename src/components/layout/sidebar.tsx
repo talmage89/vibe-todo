@@ -199,7 +199,7 @@ export const Sidebar = ({ isOpen, onClose, onAddTask }: SidebarProps) => {
             {onAddTask && (
               <Button
                 ref={(el) => setItemRef(refIndex++, el)}
-                variant="secondary"
+                variant="outline"
                 size="sm"
                 onClick={onAddTask}
                 className="flex-1"
@@ -210,7 +210,7 @@ export const Sidebar = ({ isOpen, onClose, onAddTask }: SidebarProps) => {
             )}
             <Button
               ref={(el) => setItemRef(refIndex++, el)}
-              variant="secondary"
+              variant="outline"
               size="sm"
               onClick={() => setCreateModalOpen(true)}
               className="flex-1"
