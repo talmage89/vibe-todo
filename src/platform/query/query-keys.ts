@@ -10,6 +10,11 @@ export const queryKeys = {
     detail: (projectId: string, taskId: string) =>
       ["projects", projectId, "tasks", taskId] as const,
   },
+  crossProjectTasks: {
+    inbox: ["tasks", "inbox"] as const,
+    today: ["tasks", "today"] as const,
+    upcoming: ["tasks", "upcoming"] as const,
+  },
   tags: {
     all: (projectId: string) => ["projects", projectId, "tags"] as const,
   },
