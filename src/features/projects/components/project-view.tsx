@@ -35,8 +35,6 @@ export function ProjectView() {
   const { projectId } = useParams({ from: "/project/$projectId" });
   const navigate = useNavigate();
 
-  const { view, setView } = useProjectView(projectId);
-
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [createModalSectionId, setCreateModalSectionId] = useState<string | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
@@ -51,6 +49,8 @@ export function ProjectView() {
     queryFn: () => api<{ project: Project }>(`/api/projects/${projectId}`),
     select: (data) => data.project,
   });
+
+  const { view, setView } = useProjectView(projectId, project?.defaultView ?? DefaultView.LIST);
 
   const {
     sections,

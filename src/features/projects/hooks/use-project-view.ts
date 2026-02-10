@@ -1,30 +1,40 @@
-import { useCallback, useState } from "react";
-import { useAuth } from "~/platform/auth/use-auth";
-import { DefaultView } from "~/platform/db/generated";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import type { DefaultView } from "~/platform/db/generated";
+import { api } from "~/platform/query/api";
+import { queryKeys } from "~/platform/query/query-keys";
+import type { Project } from "../types";
 
-const STORAGE_PREFIX = "project-view-";
+export function useProjectView(projectId: string, currentView: DefaultView) {
+  const queryClient = useQueryClient();
 
-function getStoredView(projectId: string): DefaultView | null {
-  const stored = localStorage.getItem(`${STORAGE_PREFIX}${projectId}`);
-  if (stored === DefaultView.LIST || stored === DefaultView.KANBAN) {
-    return stored as DefaultView;
-  }
-  return null;
-}
-
-export function useProjectView(projectId: string) {
-  const { user } = useAuth();
-  const fallback = user?.defaultView ?? DefaultView.LIST;
-
-  const [view, setViewState] = useState<DefaultView>(() => getStoredView(projectId) ?? fallback);
-
-  const setView = useCallback(
-    (next: DefaultView) => {
-      setViewState(next);
-      localStorage.setItem(`${STORAGE_PREFIX}${projectId}`, next);
+  const mutation = useMutation({
+    mutationFn: (defaultView: DefaultView) =>
+      api<{ project: Project }>(`/api/projects/${projectId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ defaultView }),
+      }),
+    onMutate: async (defaultView) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.projects.detail(projectId) });
+      const previous = queryClient.getQueryData(queryKeys.projects.detail(projectId));
+      queryClient.setQueryData(
+        queryKeys.projects.detail(projectId),
+        (old: { project: Project } | undefined) =>
+          old ? { project: { ...old.project, defaultView } } : old,
+      );
+      return { previous };
     },
-    [projectId],
-  );
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(queryKeys.projects.detail(projectId), context.previous);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(projectId) });
+    },
+  });
 
-  return { view, setView } as const;
+  return {
+    view: currentView,
+    setView: (next: DefaultView) => mutation.mutate(next),
+  } as const;
 }

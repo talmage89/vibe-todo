@@ -43,6 +43,7 @@ async function getProjectHandler({ user, params }: GetProjectHandlerProps) {
 const updateProjectSchema = z.object({
   name: z.string().optional(),
   color: z.union([z.string(), z.null()]).optional(),
+  defaultView: z.enum(["LIST", "KANBAN"]).optional(),
 });
 
 type UpdateProjectHandlerProps = {
