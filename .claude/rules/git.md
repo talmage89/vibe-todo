@@ -17,6 +17,5 @@ The Git remote is on a dedicated Gitea instance. There's a secondary `push` remo
   - DO NOT use web UI interactions or browser automation for PR management.
   - DO NOT use any wrapper scripts or shortcuts that bypass the Gitea API.
 - Documentation for the API can be found at `docs/GITEA-API.yaml`.
-- Further information can be discovered in `.giteaconfig` on the `main` worktree (`todo/todo/.giteaconfig`).
 - When updating PRs, respond to comments you resolved or leave leave your own comments discussing your changes.
 - Code MUST pass all formatting and typecheck issues, even if unrelated to your code. If you encounter a type error, ensure `bun install` and `bunx prisma generate` have been run.
