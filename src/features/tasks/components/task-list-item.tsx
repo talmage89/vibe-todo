@@ -66,7 +66,7 @@ export function TaskListItem({ task, onToggleStatus, onClick }: TaskListItemProp
     <button
       type="button"
       onClick={() => onClick(task.id)}
-      className="flex w-full items-center gap-2 rounded px-3 py-1.5 text-left text-sm transition-colors hover:bg-surface"
+      className="flex w-full items-center gap-2 rounded px-3 py-1.5 text-left text-sm transition-colors hover:bg-surface active:opacity-90"
     >
       <span
         role="checkbox"

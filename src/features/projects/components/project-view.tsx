@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useCallback, useState } from "react";
 import { Button } from "~/components/ui/button";
+import { SkeletonTaskList } from "~/components/ui/skeleton";
+import { Spinner } from "~/components/ui/spinner";
 import { SectionList } from "~/features/sections/components/section-list";
 import { useSections } from "~/features/sections/hooks/use-sections";
 import { SectionTaskList } from "~/features/tasks/components/section-task-list";
@@ -108,8 +110,7 @@ export function ProjectView() {
   }, []);
 
   const renderSectionContent = useCallback(
-    (sectionId: string, isCollapsed: boolean) => {
-      if (isCollapsed) return null;
+    (sectionId: string, _isCollapsed: boolean) => {
       const sectionTasks = tasksBySectionId[sectionId] ?? [];
       return (
         <SectionTaskList
@@ -126,7 +127,7 @@ export function ProjectView() {
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <p className="text-secondary text-sm">Loading...</p>
+        <Spinner label="Loading project..." />
       </div>
     );
   }
@@ -151,7 +152,7 @@ export function ProjectView() {
   return (
     <div className="flex h-full flex-col">
       <header className="border-border border-b">
-        <div className="flex items-center justify-between px-6 py-4">
+        <div className="flex items-center justify-between px-4 py-2.5">
           <div className="flex items-center gap-3">
             {project.color && (
               <span
@@ -183,12 +184,12 @@ export function ProjectView() {
           </div>
         </div>
         {tags.length > 0 && (
-          <div className="border-border border-t px-6 py-2">
+          <div className="border-border border-t px-4 py-1.5">
             <TagFilter tags={tags} selectedTagIds={filterTagIds} onChange={setFilterTagIds} />
           </div>
         )}
       </header>
-      <main className="flex-1 overflow-y-auto p-6">
+      <main className="flex-1 overflow-y-auto px-4 py-3">
         {unsectionedTasks.length > 0 && (
           <div className="mb-4">
             <SectionTaskList
@@ -201,7 +202,7 @@ export function ProjectView() {
         )}
 
         {sectionsLoading ? (
-          <p className="text-secondary text-sm">Loading sections...</p>
+          <SkeletonTaskList count={5} />
         ) : (
           <SectionList
             sections={sections}

@@ -36,7 +36,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
   };
 
   return (
-    <header className="flex h-14 items-center justify-between border-border border-b bg-background px-4">
+    <header className="flex h-12 items-center justify-between border-border border-b bg-background px-4">
       {/* Left section: menu button (mobile) + search placeholder */}
       <div className="flex items-center gap-3">
         <Button
@@ -50,7 +50,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
         </Button>
 
         {/* Search button - placeholder for future command palette */}
-        <Button variant="outline" className="flex items-center gap-2 text-secondary">
+        <Button variant="secondary" className="flex items-center gap-2">
           <MagnifyingGlassIcon className="h-4 w-4" />
           <span className="hidden sm:inline">Search</span>
           <kbd className="hidden rounded bg-surface px-1.5 py-0.5 font-medium text-secondary text-xs sm:inline">
@@ -68,9 +68,9 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
             aria-label="User menu"
           >
             {user?.avatar ? (
-              <img src={user.avatar} alt="" className="h-8 w-8 rounded-full" />
+              <img src={user.avatar} alt="" className="h-7 w-7 rounded-full" />
             ) : (
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent font-medium text-sm text-white">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-accent font-medium text-white text-xs">
                 {user?.name?.charAt(0) ?? user?.email?.charAt(0) ?? "?"}
               </div>
             )}

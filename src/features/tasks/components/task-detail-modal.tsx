@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { Skeleton, SkeletonText } from "~/components/ui/skeleton";
 import type { Section } from "~/features/sections/types";
 import type { Subtask, Tag, Task, TaskUpdates } from "../types";
 import { TaskPriority, TaskStatus } from "../types";
@@ -103,7 +104,16 @@ export function TaskDetailModal({
           </DialogHeader>
           <DialogBody className="max-h-[70vh] space-y-6 overflow-y-auto">
             {loading ? (
-              <div className="py-8 text-center text-secondary text-sm">Loading...</div>
+              <div className="space-y-6 py-2">
+                <SkeletonText className="h-6 w-3/4" />
+                <SkeletonText className="h-4 w-full" />
+                <div className="grid grid-cols-3 gap-4">
+                  <Skeleton className="h-9 w-full" />
+                  <Skeleton className="h-9 w-full" />
+                  <Skeleton className="h-9 w-full" />
+                </div>
+                <SkeletonText className="h-4 w-1/2" />
+              </div>
             ) : task ? (
               <>
                 <TitleField value={task.title} onSave={(title) => onUpdateTask({ title })} />

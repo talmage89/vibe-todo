@@ -2,7 +2,6 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
   Bars3Icon,
-  ChevronDownIcon,
   ChevronRightIcon,
   EllipsisHorizontalIcon,
   PencilIcon,
@@ -140,11 +139,9 @@ export function SectionItem({
           aria-expanded={!isCollapsed}
           aria-label={isCollapsed ? "Expand section" : "Collapse section"}
         >
-          {isCollapsed ? (
-            <ChevronRightIcon className="h-4 w-4" />
-          ) : (
-            <ChevronDownIcon className="h-4 w-4" />
-          )}
+          <ChevronRightIcon
+            className={cn("h-4 w-4 transition-transform duration-150", !isCollapsed && "rotate-90")}
+          />
         </button>
 
         {isEditing ? (
@@ -163,7 +160,7 @@ export function SectionItem({
           <button
             type="button"
             onClick={onToggleCollapse}
-            className="flex flex-1 items-center gap-2 text-left"
+            className="flex flex-1 items-center gap-2 text-left transition-colors"
           >
             <span className="font-medium text-primary text-sm">{section.name}</span>
             {taskCount > 0 && <span className="text-secondary text-xs">{taskCount}</span>}
@@ -196,7 +193,14 @@ export function SectionItem({
 
       {error && <p className="px-2 pb-1.5 text-sm text-urgent">{error}</p>}
 
-      {!isCollapsed && children}
+      <div
+        className={cn(
+          "grid transition-[grid-template-rows] duration-150 ease-out",
+          isCollapsed ? "grid-rows-[0fr]" : "grid-rows-[1fr]",
+        )}
+      >
+        <div className="overflow-hidden">{children}</div>
+      </div>
     </div>
   );
 }

@@ -63,7 +63,7 @@ export function TaskQuickAdd({ onSubmit }: TaskQuickAddProps) {
           setIsEditing(true);
           setTimeout(() => inputRef.current?.focus(), 0);
         }}
-        className="flex w-full items-center gap-2 rounded px-3 py-2 text-secondary text-sm transition-colors hover:bg-surface hover:text-primary"
+        className="flex w-full items-center gap-2 rounded px-3 py-2 text-secondary text-sm transition-colors hover:bg-surface hover:text-primary active:opacity-90"
       >
         <PlusIcon className="h-4 w-4" />
         Add task
@@ -72,7 +72,7 @@ export function TaskQuickAdd({ onSubmit }: TaskQuickAddProps) {
   }
 
   return (
-    <div className="rounded border border-border bg-background p-3">
+    <div className="fade-in-0 animate-in rounded border border-border bg-background p-3 duration-100">
       <div className="flex items-center gap-2">
         <Input
           ref={inputRef}
