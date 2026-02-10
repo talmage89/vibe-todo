@@ -2,7 +2,6 @@
 name: sync
 description: Sync a worktree by installing deps and generating Prisma client (no DB migrations).
 argument-hint: ""
-disable-model-invocation: true
 ---
 
 You are responsible for syncing the local worktree so code can build, typecheck, and run.
