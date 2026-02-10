@@ -1,7 +1,8 @@
-import { CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { CheckIcon } from "@heroicons/react/24/outline";
 import { useCallback, useState } from "react";
 import { cn } from "~/components/ui/cn";
 import type { Tag } from "../types";
+import { TagChip } from "./tag-chip";
 
 interface TagSelectProps {
   tags: Tag[];
@@ -27,8 +28,7 @@ export function TagSelect({ tags, selectedIds, onChange, disabled }: TagSelectPr
   );
 
   const removeTag = useCallback(
-    (tagId: string, e: React.MouseEvent) => {
-      e.stopPropagation();
+    (tagId: string) => {
       if (disabled) return;
       onChange(selectedIds.filter((id) => id !== tagId));
     },
@@ -59,20 +59,7 @@ export function TagSelect({ tags, selectedIds, onChange, disabled }: TagSelectPr
       >
         {selectedTags.length > 0 ? (
           selectedTags.map((tag) => (
-            <span
-              key={tag.id}
-              className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs"
-              style={{ backgroundColor: `${tag.color}20`, color: tag.color }}
-            >
-              {tag.name}
-              <button
-                type="button"
-                onClick={(e) => removeTag(tag.id, e)}
-                className="rounded hover:bg-black/10"
-              >
-                <XMarkIcon className="h-3 w-3" />
-              </button>
-            </span>
+            <TagChip key={tag.id} tag={tag} onRemove={removeTag} className="px-2" />
           ))
         ) : (
           <span className="text-secondary">Select tags</span>
