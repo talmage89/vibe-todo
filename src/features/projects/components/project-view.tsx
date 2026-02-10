@@ -23,7 +23,7 @@ import { TaskDetailModal } from "~/features/tasks/components/task-detail-modal";
 import { useProjectTasks } from "~/features/tasks/hooks/use-project-tasks";
 import { useTags } from "~/features/tasks/hooks/use-tags";
 import { useTaskDragDrop } from "~/features/tasks/hooks/use-task-drag-drop";
-import type { TaskStatus } from "~/features/tasks/types";
+import type { TaskStatus, TaskUpdates } from "~/features/tasks/types";
 import { api } from "~/platform/query/api";
 import { queryKeys } from "~/platform/query/query-keys";
 import type { Project } from "../types";
@@ -98,6 +98,21 @@ export function ProjectView() {
     [updateTask],
   );
 
+  const handleUpdateTask = useCallback(
+    async (taskId: string, updates: TaskUpdates) => {
+      const { description, dueDate, ...rest } = updates;
+      const payload: Parameters<typeof updateTask>[1] = { ...rest };
+      if (description !== undefined) {
+        payload.description = description ?? undefined;
+      }
+      if (dueDate !== undefined) {
+        payload.dueDate = dueDate ? new Date(dueDate) : undefined;
+      }
+      await updateTask(taskId, payload);
+    },
+    [updateTask],
+  );
+
   const handleQuickAdd = useCallback(
     (sectionId: string | null) => async (title: string) => {
       await createTask({ title, sectionId });
@@ -136,12 +151,14 @@ export function ProjectView() {
           sectionId={sectionId}
           tasks={sectionTasks}
           onToggleStatus={handleToggleStatus}
+          onUpdateTask={handleUpdateTask}
           onClickTask={handleClickTask}
           onQuickAdd={handleQuickAdd(sectionId)}
+          availableTags={tags}
         />
       );
     },
-    [currentTaskMap, handleToggleStatus, handleClickTask, handleQuickAdd],
+    [currentTaskMap, handleToggleStatus, handleUpdateTask, handleClickTask, handleQuickAdd, tags],
   );
 
   if (loading) {
@@ -224,8 +241,10 @@ export function ProjectView() {
                 sectionId="__unsectioned"
                 tasks={unsectionedTasks}
                 onToggleStatus={handleToggleStatus}
+                onUpdateTask={handleUpdateTask}
                 onClickTask={handleClickTask}
                 onQuickAdd={handleQuickAdd(null)}
+                availableTags={tags}
               />
             </div>
           )}
