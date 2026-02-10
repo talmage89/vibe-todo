@@ -99,6 +99,20 @@ export function TaskListItem({ task, onToggleStatus, onClick }: TaskListItemProp
       </span>
 
       <span className="flex shrink-0 items-center gap-2">
+        {task.tags.length > 0 && !isDone && (
+          <span className="flex items-center gap-1">
+            {task.tags.map((tag) => (
+              <span
+                key={tag.id}
+                className="inline-flex items-center rounded px-1.5 py-0.5 text-xs leading-none"
+                style={{ backgroundColor: `${tag.color}20`, color: tag.color }}
+              >
+                {tag.name}
+              </span>
+            ))}
+          </span>
+        )}
+
         {totalSubtasks > 0 && (
           <span className="text-secondary text-xs">
             {completedSubtasks}/{totalSubtasks}
