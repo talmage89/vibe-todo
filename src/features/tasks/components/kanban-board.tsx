@@ -70,7 +70,7 @@ function KanbanColumn({
   return (
     <div
       className={cn(
-        "flex w-72 shrink-0 flex-col rounded transition-colors",
+        "flex h-full w-72 shrink-0 flex-col rounded transition-colors",
         isOver ? "bg-surface" : "bg-surface/50",
       )}
     >
@@ -82,7 +82,7 @@ function KanbanColumn({
         <div
           ref={setNodeRef}
           className={cn(
-            "flex flex-1 flex-col gap-1.5 overflow-y-auto rounded px-1.5 pb-1.5 transition-colors",
+            "flex min-h-24 flex-1 flex-col gap-1.5 overflow-y-auto rounded px-1.5 pb-1.5 transition-colors",
             isOver && tasks.length === 0 && "bg-surface",
           )}
         >
@@ -134,7 +134,7 @@ export function KanbanBoard({ tasks, onClickTask, onUpdateTaskStatus }: KanbanBo
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
-      <div className="flex h-full gap-3 overflow-x-auto px-4 py-3">
+      <div className="flex min-h-0 flex-1 gap-3 overflow-x-auto px-4 py-3">
         {COLUMNS.map(({ status, label }) => {
           const columnTasks = columns[status] ?? [];
           return (
