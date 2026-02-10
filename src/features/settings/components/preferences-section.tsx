@@ -9,9 +9,10 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { useToast } from "~/components/ui/toast";
-import type { Project } from "~/features/projects/types";
+import { useProjects } from "~/features/projects/hooks/use-projects";
 import { useAuth } from "~/platform/auth/use-auth";
 import { DefaultView, Theme } from "~/platform/db/generated";
+import { api } from "~/platform/query/api";
 import { useTheme } from "~/platform/theme/use-theme";
 
 const themeOptions: { value: Theme; label: string }[] = [
@@ -29,6 +30,7 @@ export function PreferencesSection() {
   const { user, refetch } = useAuth();
   const { setTheme: setClientTheme } = useTheme();
   const { toast } = useToast();
+  const { projects } = useProjects();
 
   const [theme, setTheme] = useState<Theme>(user?.theme ?? Theme.SYSTEM);
   const [defaultView, setDefaultView] = useState<DefaultView>(
@@ -37,7 +39,6 @@ export function PreferencesSection() {
   const [defaultProjectId, setDefaultProjectId] = useState<string | null>(
     user?.defaultProjectId ?? null,
   );
-  const [projects, setProjects] = useState<Project[]>([]);
   const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
@@ -48,21 +49,6 @@ export function PreferencesSection() {
       setDefaultProjectId(user.defaultProjectId ?? null);
     }
   }, [user]);
-
-  useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        const response = await fetch("/api/projects");
-        if (response.ok) {
-          const data = await response.json();
-          setProjects(data.projects ?? []);
-        }
-      } catch {
-        // Silently fail, projects are optional
-      }
-    };
-    fetchProjects();
-  }, []);
 
   useEffect(() => {
     const changed =
@@ -77,9 +63,8 @@ export function PreferencesSection() {
 
     try {
       setSaving(true);
-      const response = await fetch("/api/me", {
+      await api("/api/me", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           theme,
           defaultView,
@@ -87,12 +72,6 @@ export function PreferencesSection() {
         }),
       });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to update preferences");
-      }
-
-      // Sync theme with client-side theme provider
       setClientTheme(theme);
 
       await refetch();

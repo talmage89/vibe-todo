@@ -1,6 +1,7 @@
 import { ArrowLeftIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { ConfirmDialog } from "~/components/ui/confirm-dialog";
@@ -9,52 +10,43 @@ import { useToast } from "~/components/ui/toast";
 import { ColorPicker } from "~/features/projects/components/color-picker";
 import { TagManager } from "~/features/tasks/components/tag-manager";
 import { useTags } from "~/features/tasks/hooks/use-tags";
+import { api } from "~/platform/query/api";
+import { queryKeys } from "~/platform/query/query-keys";
 import type { Project } from "../types";
+
+interface ProjectResponse {
+  project: Project;
+}
 
 export function ProjectSettings() {
   const { projectId } = useParams({ from: "/project/$projectId/settings" });
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const [project, setProject] = useState<Project | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: project,
+    isLoading: loading,
+    error: projectError,
+  } = useQuery({
+    queryKey: queryKeys.projects.detail(projectId),
+    queryFn: () => api<ProjectResponse>(`/api/projects/${projectId}`),
+    select: (data) => data.project,
+  });
 
   const [name, setName] = useState("");
   const [color, setColor] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
-
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [deleting, setDeleting] = useState(false);
 
   const { tags, loading: tagsLoading, createTag, updateTag, deleteTag } = useTags(projectId);
 
-  const fetchProject = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const response = await fetch(`/api/projects/${projectId}`);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to fetch project");
-      }
-
-      setProject(data.project);
-      setName(data.project.name);
-      setColor(data.project.color);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
-    } finally {
-      setLoading(false);
-    }
-  }, [projectId]);
-
   useEffect(() => {
-    fetchProject();
-  }, [fetchProject]);
+    if (project) {
+      setName(project.name);
+      setColor(project.color);
+    }
+  }, [project]);
 
   useEffect(() => {
     if (project) {
@@ -64,63 +56,52 @@ export function ProjectSettings() {
     }
   }, [name, color, project]);
 
-  const handleSave = async () => {
-    if (!hasChanges || !name.trim()) return;
-
-    try {
-      setSaving(true);
-
-      const response = await fetch(`/api/projects/${projectId}`, {
+  const saveMutation = useMutation({
+    mutationFn: (input: { name: string; color: string | null }) =>
+      api<ProjectResponse>(`/api/projects/${projectId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), color }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to update project");
-      }
-
-      setProject(data.project);
+        body: JSON.stringify(input),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(projectId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
       setHasChanges(false);
       toast({ title: "Project updated", variant: "success" });
-    } catch (err) {
+    },
+    onError: (err) => {
       toast({
         title: "Failed to update project",
-        description: err instanceof Error ? err.message : "An error occurred",
+        description: err.message,
         variant: "error",
       });
-    } finally {
-      setSaving(false);
-    }
-  };
+    },
+  });
 
-  const handleDelete = async () => {
-    try {
-      setDeleting(true);
-
-      const response = await fetch(`/api/projects/${projectId}`, {
-        method: "DELETE",
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to delete project");
-      }
-
+  const deleteMutation = useMutation({
+    mutationFn: () => api<void>(`/api/projects/${projectId}`, { method: "DELETE" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+      queryClient.removeQueries({ queryKey: queryKeys.projects.detail(projectId) });
       toast({ title: "Project deleted", variant: "success" });
       navigate({ to: "/" });
-    } catch (err) {
+    },
+    onError: (err) => {
       toast({
         title: "Failed to delete project",
-        description: err instanceof Error ? err.message : "An error occurred",
+        description: err.message,
         variant: "error",
       });
-      setDeleting(false);
       setDeleteDialogOpen(false);
-    }
+    },
+  });
+
+  const handleSave = () => {
+    if (!hasChanges || !name.trim()) return;
+    saveMutation.mutate({ name: name.trim(), color });
+  };
+
+  const handleDelete = () => {
+    deleteMutation.mutate();
   };
 
   const handleReset = () => {
@@ -138,10 +119,10 @@ export function ProjectSettings() {
     );
   }
 
-  if (error) {
+  if (projectError) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4">
-        <p className="text-secondary text-sm">{error}</p>
+        <p className="text-secondary text-sm">{projectError.message}</p>
         <Button variant="secondary" onClick={() => navigate({ to: "/" })}>
           Go back
         </Button>
@@ -194,12 +175,12 @@ export function ProjectSettings() {
               <Button
                 variant="filled"
                 onClick={handleSave}
-                disabled={!hasChanges || !name.trim() || saving}
+                disabled={!hasChanges || !name.trim() || saveMutation.isPending}
               >
-                {saving ? "Saving..." : "Save changes"}
+                {saveMutation.isPending ? "Saving..." : "Save changes"}
               </Button>
               {hasChanges && (
-                <Button variant="secondary" onClick={handleReset} disabled={saving}>
+                <Button variant="secondary" onClick={handleReset} disabled={saveMutation.isPending}>
                   Reset
                 </Button>
               )}
@@ -249,7 +230,7 @@ export function ProjectSettings() {
         confirmLabel="Delete project"
         variant="destructive"
         onConfirm={handleDelete}
-        loading={deleting}
+        loading={deleteMutation.isPending}
       />
     </div>
   );
