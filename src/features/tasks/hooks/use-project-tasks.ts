@@ -69,7 +69,34 @@ export function useProjectTasks(projectId: string) {
         method: "PATCH",
         body: JSON.stringify(data),
       }),
-    onSuccess: () => {
+    onMutate: async ({ taskId, data }) => {
+      await queryClient.cancelQueries({ queryKey: allTasksKey });
+      const previous = queryClient.getQueryData<TasksResponse>(allTasksKey);
+      queryClient.setQueryData<TasksResponse>(allTasksKey, (old) => {
+        if (!old) return old;
+        return {
+          tasks: old.tasks.map((t) => {
+            if (t.id !== taskId) return t;
+            const patch: Partial<Task> = {};
+            if (data.status !== undefined) patch.status = data.status;
+            if (data.title !== undefined) patch.title = data.title;
+            if (data.priority !== undefined) patch.priority = data.priority;
+            if (data.sectionId !== undefined) patch.sectionId = data.sectionId;
+            if (data.dueDate !== undefined) {
+              patch.dueDate = data.dueDate ? data.dueDate.toISOString() : null;
+            }
+            return { ...t, ...patch };
+          }),
+        };
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(allTasksKey, context.previous);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: allTasksKey });
     },
   });
