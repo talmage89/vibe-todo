@@ -1,0 +1,30 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  check:
+    runs-on: linux_amd64
+    steps:
+      - name: Checkout
+        uses: https://git.talmage.dev/system/actions-checkout@v1
+
+      - name: Set up project
+        env:
+          DB_URL: ${{ secrets.DB_URL }}
+        run: |
+          curl -fsSL https://bun.com/install | bash
+          ~/.bun/bin/bun install
+          ~/.bun/bin/bun x --bun prisma generate
+
+      - name: Check formatting and types
+        run: |
+          ~/.bun/bin/bun run check
+
+      - name: Run tests
+        run: |
+          ~/.bun/bin/bun run test
