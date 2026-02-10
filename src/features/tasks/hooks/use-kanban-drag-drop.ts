@@ -25,11 +25,21 @@ function groupByStatus(tasks: Task[]): Record<TaskStatus, Task[]> {
   return map;
 }
 
+function isStatusId(id: string): id is TaskStatus {
+  return ALL_STATUSES.includes(id as TaskStatus);
+}
+
 function findColumnForTask(taskId: string, columns: Record<TaskStatus, Task[]>): TaskStatus | null {
   for (const status of ALL_STATUSES) {
     if (columns[status].some((t) => t.id === taskId)) return status;
   }
   return null;
+}
+
+function cloneColumns(cols: Record<TaskStatus, Task[]>): Record<TaskStatus, Task[]> {
+  const clone = {} as Record<TaskStatus, Task[]>;
+  for (const s of ALL_STATUSES) clone[s] = [...cols[s]];
+  return clone;
 }
 
 interface UseKanbanDragDropArgs {
@@ -62,9 +72,9 @@ export function useKanbanDragDrop({ tasks, onUpdateTaskStatus }: UseKanbanDragDr
     (event: DragStartEvent) => {
       const id = String(event.active.id);
       setActiveId(id);
-      sourceColumnRef.current = findColumnForTask(id, localColumns ?? serverColumns);
+      sourceColumnRef.current = findColumnForTask(id, serverColumns);
     },
-    [localColumns, serverColumns],
+    [serverColumns],
   );
 
   const handleDragOver = useCallback(
@@ -74,56 +84,46 @@ export function useKanbanDragDrop({ tasks, onUpdateTaskStatus }: UseKanbanDragDr
 
       const activeTaskId = String(active.id);
       const overId = String(over.id);
-
       const currentCols = localColumns ?? serverColumns;
       const activeColumn = findColumnForTask(activeTaskId, currentCols);
       if (!activeColumn) return;
 
-      let overColumn: TaskStatus | null = null;
-      if (ALL_STATUSES.includes(overId as TaskStatus)) {
-        overColumn = overId as TaskStatus;
-      } else {
-        overColumn = findColumnForTask(overId, currentCols);
-      }
-
+      const overColumn = isStatusId(overId) ? overId : findColumnForTask(overId, currentCols);
       if (!overColumn || activeColumn === overColumn) return;
 
-      const newCols = { ...currentCols };
-      const sourceArr = [...newCols[activeColumn]];
-      const destArr = [...newCols[overColumn]];
-
-      const taskIndex = sourceArr.findIndex((t) => t.id === activeTaskId);
+      const newCols = cloneColumns(currentCols);
+      const taskIndex = newCols[activeColumn].findIndex((t) => t.id === activeTaskId);
       if (taskIndex === -1) return;
 
-      const [removed] = sourceArr.splice(taskIndex, 1);
+      const [removed] = newCols[activeColumn].splice(taskIndex, 1);
       if (!removed) return;
 
-      if (ALL_STATUSES.includes(overId as TaskStatus)) {
-        destArr.push(removed);
+      if (isStatusId(overId)) {
+        newCols[overColumn].push(removed);
       } else {
-        const overIndex = destArr.findIndex((t) => t.id === overId);
+        const overIndex = newCols[overColumn].findIndex((t) => t.id === overId);
         if (overIndex !== -1) {
-          destArr.splice(overIndex, 0, removed);
+          newCols[overColumn].splice(overIndex, 0, removed);
         } else {
-          destArr.push(removed);
+          newCols[overColumn].push(removed);
         }
       }
 
-      newCols[activeColumn] = sourceArr;
-      newCols[overColumn] = destArr;
       setLocalColumns(newCols);
     },
     [localColumns, serverColumns],
   );
 
   const handleDragEnd = useCallback(
-    async (event: DragEndEvent) => {
+    (event: DragEndEvent) => {
       const { active, over } = event;
+      const sourceColumn = sourceColumnRef.current;
+
+      setActiveId(null);
+      sourceColumnRef.current = null;
 
       if (!over) {
-        setActiveId(null);
         setLocalColumns(null);
-        sourceColumnRef.current = null;
         return;
       }
 
@@ -133,37 +133,29 @@ export function useKanbanDragDrop({ tasks, onUpdateTaskStatus }: UseKanbanDragDr
       const activeColumn = findColumnForTask(activeTaskId, currentCols);
 
       if (!activeColumn) {
-        setActiveId(null);
         setLocalColumns(null);
-        sourceColumnRef.current = null;
         return;
       }
 
-      if (!ALL_STATUSES.includes(overId as TaskStatus) && activeTaskId !== overId) {
+      if (!isStatusId(overId) && activeTaskId !== overId) {
         const overColumn = findColumnForTask(overId, currentCols);
         if (overColumn && overColumn === activeColumn) {
-          const colTasks = [...currentCols[activeColumn]];
+          const colTasks = currentCols[activeColumn];
           const oldIdx = colTasks.findIndex((t) => t.id === activeTaskId);
           const newIdx = colTasks.findIndex((t) => t.id === overId);
           if (oldIdx !== -1 && newIdx !== -1 && oldIdx !== newIdx) {
-            const reordered = arrayMove(colTasks, oldIdx, newIdx);
-            const newCols = { ...currentCols };
-            newCols[activeColumn] = reordered;
+            const newCols = cloneColumns(currentCols);
+            newCols[activeColumn] = arrayMove(colTasks, oldIdx, newIdx);
             setLocalColumns(newCols);
           }
         }
       }
 
-      const sourceColumn = sourceColumnRef.current;
-      const finalColumn = findColumnForTask(activeTaskId, localColumns ?? serverColumns);
-
-      if (sourceColumn && finalColumn && sourceColumn !== finalColumn) {
-        await onUpdateTaskStatus(activeTaskId, finalColumn);
-      }
-
-      setActiveId(null);
       setLocalColumns(null);
-      sourceColumnRef.current = null;
+
+      if (sourceColumn && activeColumn !== sourceColumn) {
+        onUpdateTaskStatus(activeTaskId, activeColumn);
+      }
     },
     [localColumns, serverColumns, onUpdateTaskStatus],
   );
