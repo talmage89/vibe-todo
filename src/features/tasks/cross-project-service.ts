@@ -37,6 +37,23 @@ export async function getTodayTasks(userId: string) {
   return { tasks };
 }
 
+export async function getOverdueTasks(userId: string) {
+  const now = new Date();
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  const tasks = await db.task.findMany({
+    where: {
+      userId,
+      status: { not: TaskStatus.DONE },
+      dueDate: { lt: startOfDay },
+    },
+    include: crossProjectTaskInclude,
+    orderBy: [{ dueDate: "asc" }, { project: { name: "asc" } }, { position: "asc" }],
+  });
+
+  return { tasks };
+}
+
 export async function getUpcomingTasks(userId: string) {
   const now = new Date();
   const startOfTomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
