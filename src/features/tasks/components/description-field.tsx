@@ -16,11 +16,21 @@ export function DescriptionField({ value, onSave }: DescriptionFieldProps) {
     setEditValue(value ?? "");
   }, [value]);
 
+  const autoResize = useCallback(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, []);
+
   const handleStartEdit = useCallback(() => {
     setIsEditing(true);
     setEditValue(value ?? "");
-    setTimeout(() => textareaRef.current?.focus(), 0);
-  }, [value]);
+    setTimeout(() => {
+      textareaRef.current?.focus();
+      autoResize();
+    }, 0);
+  }, [value, autoResize]);
 
   const handleSave = useCallback(async () => {
     const trimmed = editValue.trim();
@@ -59,12 +69,16 @@ export function DescriptionField({ value, onSave }: DescriptionFieldProps) {
         <Textarea
           ref={textareaRef}
           value={editValue}
-          onChange={(e) => setEditValue(e.target.value)}
+          onChange={(e) => {
+            setEditValue(e.target.value);
+            autoResize();
+          }}
           onKeyDown={handleKeyDown}
           onBlur={handleSave}
           disabled={saving}
           placeholder="Add a description..."
-          rows={4}
+          className="resize-none overflow-hidden"
+          rows={1}
         />
       </div>
     );

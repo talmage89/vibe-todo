@@ -238,7 +238,7 @@ export function TaskListItem({
         </span>
       )}
 
-      <span className="flex shrink-0 items-center gap-1">
+      <span className="relative flex shrink-0 items-center gap-1">
         {task.tags.length > 0 && !isDone && (
           <span className="flex items-center gap-1">
             {task.tags.map((tag) => (
@@ -257,8 +257,8 @@ export function TaskListItem({
           <span
             className={cn(
               "flex items-center gap-0.5 text-xs",
-              hasMenuOpen && "hidden",
-              !hasMenuOpen && "group-hover/task:hidden",
+              hasMenuOpen && "invisible",
+              !hasMenuOpen && "group-hover/task:invisible",
               isDone
                 ? "text-secondary"
                 : isDueDateOverdue(task.dueDate)
@@ -275,8 +275,8 @@ export function TaskListItem({
           <span
             className={cn(
               "h-1.5 w-1.5 shrink-0 rounded-full bg-current",
-              hasMenuOpen && "hidden",
-              !hasMenuOpen && "group-hover/task:hidden",
+              hasMenuOpen && "invisible",
+              !hasMenuOpen && "group-hover/task:invisible",
               priorityColor,
             )}
           />
@@ -284,8 +284,8 @@ export function TaskListItem({
 
         <span
           className={cn(
-            "items-center gap-0.5",
-            hasMenuOpen ? "flex" : "hidden group-hover/task:flex",
+            "absolute right-3 flex items-center gap-0.5",
+            hasMenuOpen ? "visible" : "invisible group-hover/task:visible",
           )}
         >
           <div className="relative">
