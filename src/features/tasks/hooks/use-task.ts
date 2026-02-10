@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { parseApiError } from "~/platform/utils/api-error";
 import type { Subtask, Task, TaskUpdates } from "../types";
 
 interface TaskResponse {
@@ -25,12 +26,12 @@ export function useTask(projectId: string, taskId: string | null) {
       setError(null);
 
       const response = await fetch(`/api/projects/${projectId}/tasks/${taskId}`);
-      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to fetch task");
+        await parseApiError(response, "Failed to fetch task");
       }
 
+      const data = await response.json();
       setTask(data.task);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
@@ -55,12 +56,11 @@ export function useTask(projectId: string, taskId: string | null) {
         body: JSON.stringify(updates),
       });
 
-      const data: TaskResponse = await response.json();
-
       if (!response.ok) {
-        throw new Error("Failed to update task");
+        await parseApiError(response, "Failed to update task");
       }
 
+      const data: TaskResponse = await response.json();
       setTask(data.task);
       return data.task;
     },
@@ -76,10 +76,8 @@ export function useTask(projectId: string, taskId: string | null) {
       method: "DELETE",
     });
 
-    const data = await response.json();
-
     if (!response.ok) {
-      throw new Error(data.error || "Failed to delete task");
+      await parseApiError(response, "Failed to delete task");
     }
 
     setTask(null);
@@ -97,11 +95,11 @@ export function useTask(projectId: string, taskId: string | null) {
         body: JSON.stringify({ title }),
       });
 
-      const data: SubtaskResponse = await response.json();
-
       if (!response.ok) {
-        throw new Error("Failed to create subtask");
+        await parseApiError(response, "Failed to create subtask");
       }
+
+      const data: SubtaskResponse = await response.json();
 
       setTask((prev) => {
         if (!prev) return prev;
@@ -134,11 +132,11 @@ export function useTask(projectId: string, taskId: string | null) {
         },
       );
 
-      const data: SubtaskResponse = await response.json();
-
       if (!response.ok) {
-        throw new Error("Failed to update subtask");
+        await parseApiError(response, "Failed to update subtask");
       }
+
+      const data: SubtaskResponse = await response.json();
 
       setTask((prev) => {
         if (!prev) return prev;
@@ -166,10 +164,8 @@ export function useTask(projectId: string, taskId: string | null) {
         },
       );
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.error || "Failed to delete subtask");
+        await parseApiError(response, "Failed to delete subtask");
       }
 
       setTask((prev) => {
@@ -189,27 +185,52 @@ export function useTask(projectId: string, taskId: string | null) {
         throw new Error("No task selected");
       }
 
-      const response = await fetch(`/api/projects/${projectId}/tasks/${taskId}/subtasks/reorder`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subtaskIds }),
-      });
-
-      const data: { subtasks: Subtask[] } = await response.json();
-
-      if (!response.ok) {
-        throw new Error("Failed to reorder subtasks");
-      }
+      const previousTask = task;
 
       setTask((prev) => {
         if (!prev) return prev;
+        const subtaskMap = new Map(prev.subtasks.map((s) => [s.id, s]));
         return {
           ...prev,
-          subtasks: data.subtasks,
+          subtasks: subtaskIds
+            .map((id, index) => {
+              const subtask = subtaskMap.get(id);
+              if (!subtask) return null;
+              return { ...subtask, position: index };
+            })
+            .filter((s): s is Subtask => s !== null),
         };
       });
+
+      try {
+        const response = await fetch(
+          `/api/projects/${projectId}/tasks/${taskId}/subtasks/reorder`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ subtaskIds }),
+          },
+        );
+
+        if (!response.ok) {
+          await parseApiError(response, "Failed to reorder subtasks");
+        }
+
+        const data: { subtasks: Subtask[] } = await response.json();
+
+        setTask((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            subtasks: data.subtasks,
+          };
+        });
+      } catch (err) {
+        setTask(previousTask);
+        throw err;
+      }
     },
-    [projectId, taskId],
+    [projectId, taskId, task],
   );
 
   return {

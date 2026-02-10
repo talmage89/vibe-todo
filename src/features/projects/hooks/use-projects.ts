@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { parseApiError } from "~/platform/utils/api-error";
 import type { Project } from "../types";
 
 interface UseProjectsResult {
@@ -18,12 +19,12 @@ export const useProjects = (): UseProjectsResult => {
     try {
       setError(null);
       const response = await fetch("/api/projects");
-      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to fetch projects");
+        await parseApiError(response, "Failed to fetch projects");
       }
 
+      const data = await response.json();
       setProjects(data.projects);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch projects");
@@ -40,12 +41,11 @@ export const useProjects = (): UseProjectsResult => {
         body: JSON.stringify(input),
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.error || "Failed to create project");
+        await parseApiError(response, "Failed to create project");
       }
 
+      const data = await response.json();
       setProjects((prev) => [...prev, data.project]);
       return data.project;
     },

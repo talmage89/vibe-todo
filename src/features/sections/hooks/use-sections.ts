@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { parseApiError } from "~/platform/utils/api-error";
 import type { Section } from "../types";
 
 interface SectionResponse {
@@ -16,12 +17,12 @@ export function useSections(projectId: string) {
       setError(null);
 
       const response = await fetch(`/api/projects/${projectId}/sections`);
-      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to fetch sections");
+        await parseApiError(response, "Failed to fetch sections");
       }
 
+      const data = await response.json();
       setSections(data.sections);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
@@ -42,12 +43,11 @@ export function useSections(projectId: string) {
         body: JSON.stringify({ name }),
       });
 
-      const data: SectionResponse = await response.json();
-
       if (!response.ok) {
-        throw new Error("Failed to create section");
+        await parseApiError(response, "Failed to create section");
       }
 
+      const data: SectionResponse = await response.json();
       setSections((prev) => [...prev, data.section]);
       return data.section;
     },
@@ -62,12 +62,11 @@ export function useSections(projectId: string) {
         body: JSON.stringify({ name }),
       });
 
-      const data: SectionResponse = await response.json();
-
       if (!response.ok) {
-        throw new Error("Failed to update section");
+        await parseApiError(response, "Failed to update section");
       }
 
+      const data: SectionResponse = await response.json();
       setSections((prev) => prev.map((s) => (s.id === sectionId ? data.section : s)));
       return data.section;
     },
@@ -80,10 +79,8 @@ export function useSections(projectId: string) {
         method: "DELETE",
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.error || "Failed to delete section");
+        await parseApiError(response, "Failed to delete section");
       }
 
       setSections((prev) => prev.filter((s) => s.id !== sectionId));
@@ -113,12 +110,11 @@ export function useSections(projectId: string) {
           body: JSON.stringify({ sectionIds }),
         });
 
-        const data = await response.json();
-
         if (!response.ok) {
-          throw new Error(data.error || "Failed to reorder sections");
+          await parseApiError(response, "Failed to reorder sections");
         }
 
+        const data = await response.json();
         setSections(data.sections);
       } catch (err) {
         setSections(previousSections);

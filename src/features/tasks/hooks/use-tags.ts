@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { parseApiError } from "~/platform/utils/api-error";
 import type { Tag } from "../types";
 
 export function useTags(projectId: string) {
@@ -12,12 +13,12 @@ export function useTags(projectId: string) {
       setError(null);
 
       const response = await fetch(`/api/projects/${projectId}/tags`);
-      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to fetch tags");
+        await parseApiError(response, "Failed to fetch tags");
       }
 
+      const data = await response.json();
       setTags(data.tags);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
@@ -38,12 +39,11 @@ export function useTags(projectId: string) {
         body: JSON.stringify({ name, color }),
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.error || "Failed to create tag");
+        await parseApiError(response, "Failed to create tag");
       }
 
+      const data = await response.json();
       setTags((prev) => [...prev, data.tag].sort((a, b) => a.name.localeCompare(b.name)));
       return data.tag;
     },
@@ -58,12 +58,11 @@ export function useTags(projectId: string) {
         body: JSON.stringify(updates),
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.error || "Failed to update tag");
+        await parseApiError(response, "Failed to update tag");
       }
 
+      const data = await response.json();
       setTags((prev) =>
         prev
           .map((t) => (t.id === tagId ? data.tag : t))
@@ -81,8 +80,7 @@ export function useTags(projectId: string) {
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to delete tag");
+        await parseApiError(response, "Failed to delete tag");
       }
 
       setTags((prev) => prev.filter((t) => t.id !== tagId));

@@ -9,6 +9,8 @@ const getTasksQuerySchema = z.object({
   sectionId: z.string().optional(),
   status: z.enum(TaskStatus).optional(),
   priority: z.enum(TaskPriority).optional(),
+  cursor: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(100).optional(),
 });
 
 type GetTasksHandlerProps = {
@@ -20,8 +22,8 @@ type GetTasksHandlerProps = {
 async function getTasksHandler({ user, params, query }: GetTasksHandlerProps) {
   const authenticatedUser = requireAuth(user);
   await verifyProjectAccess(authenticatedUser.id, params.projectId);
-  const tasks = await taskService.listTasks(params.projectId, query);
-  return { success: true, tasks };
+  const result = await taskService.listTasks(params.projectId, query);
+  return { success: true, ...result };
 }
 
 const createTaskSchema = z.object({

@@ -1,15 +1,19 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { parseApiError } from "~/platform/utils/api-error";
 import type { CreateTaskData, Task } from "../types";
 
 export function useTasks(projectId: string, sectionId?: string | null) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const cursorRef = useRef<string | undefined>(undefined);
 
   const fetchTasks = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
+      cursorRef.current = undefined;
 
       const params = new URLSearchParams();
       if (sectionId !== undefined) {
@@ -18,13 +22,15 @@ export function useTasks(projectId: string, sectionId?: string | null) {
 
       const url = `/api/projects/${projectId}/tasks${params.toString() ? `?${params}` : ""}`;
       const response = await fetch(url);
-      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to fetch tasks");
+        await parseApiError(response, "Failed to fetch tasks");
       }
 
+      const data = await response.json();
       setTasks(data.tasks);
+      setHasMore(data.hasMore ?? false);
+      cursorRef.current = data.nextCursor;
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
@@ -36,6 +42,31 @@ export function useTasks(projectId: string, sectionId?: string | null) {
     fetchTasks();
   }, [fetchTasks]);
 
+  const fetchMore = useCallback(async () => {
+    if (!cursorRef.current) return;
+
+    try {
+      const params = new URLSearchParams();
+      if (sectionId !== undefined) {
+        params.set("sectionId", sectionId ?? "");
+      }
+      params.set("cursor", cursorRef.current);
+
+      const response = await fetch(`/api/projects/${projectId}/tasks?${params}`);
+
+      if (!response.ok) {
+        await parseApiError(response, "Failed to fetch tasks");
+      }
+
+      const data = await response.json();
+      setTasks((prev) => [...prev, ...data.tasks]);
+      setHasMore(data.hasMore ?? false);
+      cursorRef.current = data.nextCursor;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
+    }
+  }, [projectId, sectionId]);
+
   const createTask = useCallback(
     async (data: CreateTaskData) => {
       const response = await fetch(`/api/projects/${projectId}/tasks`, {
@@ -44,12 +75,11 @@ export function useTasks(projectId: string, sectionId?: string | null) {
         body: JSON.stringify(data),
       });
 
-      const result = await response.json();
-
       if (!response.ok) {
-        throw new Error(result.error || "Failed to create task");
+        await parseApiError(response, "Failed to create task");
       }
 
+      const result = await response.json();
       setTasks((prev) => [...prev, result.task]);
       return result.task as Task;
     },
@@ -64,12 +94,11 @@ export function useTasks(projectId: string, sectionId?: string | null) {
         body: JSON.stringify(data),
       });
 
-      const result = await response.json();
-
       if (!response.ok) {
-        throw new Error(result.error || "Failed to update task");
+        await parseApiError(response, "Failed to update task");
       }
 
+      const result = await response.json();
       setTasks((prev) => prev.map((t) => (t.id === taskId ? result.task : t)));
       return result.task as Task;
     },
@@ -83,8 +112,7 @@ export function useTasks(projectId: string, sectionId?: string | null) {
       });
 
       if (!response.ok) {
-        const result = await response.json();
-        throw new Error(result.error || "Failed to delete task");
+        await parseApiError(response, "Failed to delete task");
       }
 
       setTasks((prev) => prev.filter((t) => t.id !== taskId));
@@ -100,12 +128,11 @@ export function useTasks(projectId: string, sectionId?: string | null) {
         body: JSON.stringify({ taskIds, sectionId: targetSectionId }),
       });
 
-      const result = await response.json();
-
       if (!response.ok) {
-        throw new Error(result.error || "Failed to reorder tasks");
+        await parseApiError(response, "Failed to reorder tasks");
       }
 
+      const result = await response.json();
       setTasks(result.tasks);
     },
     [projectId],
@@ -115,6 +142,8 @@ export function useTasks(projectId: string, sectionId?: string | null) {
     tasks,
     loading,
     error,
+    hasMore,
+    fetchMore,
     createTask,
     updateTask,
     deleteTask,

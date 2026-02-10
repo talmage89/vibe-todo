@@ -1,24 +1,30 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { parseApiError } from "~/platform/utils/api-error";
 import type { CreateTaskData, Task, TaskStatus } from "../types";
 
 export function useProjectTasks(projectId: string) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const cursorRef = useRef<string | undefined>(undefined);
 
   const fetchTasks = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
+      cursorRef.current = undefined;
 
       const response = await fetch(`/api/projects/${projectId}/tasks`);
-      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to fetch tasks");
+        await parseApiError(response, "Failed to fetch tasks");
       }
 
+      const data = await response.json();
       setTasks(data.tasks);
+      setHasMore(data.hasMore ?? false);
+      cursorRef.current = data.nextCursor;
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
@@ -58,12 +64,11 @@ export function useProjectTasks(projectId: string) {
         body: JSON.stringify(data),
       });
 
-      const result = await response.json();
-
       if (!response.ok) {
-        throw new Error(result.error || "Failed to create task");
+        await parseApiError(response, "Failed to create task");
       }
 
+      const result = await response.json();
       setTasks((prev) => [...prev, result.task]);
       return result.task as Task;
     },
@@ -78,12 +83,11 @@ export function useProjectTasks(projectId: string) {
         body: JSON.stringify(data),
       });
 
-      const result = await response.json();
-
       if (!response.ok) {
-        throw new Error(result.error || "Failed to update task");
+        await parseApiError(response, "Failed to update task");
       }
 
+      const result = await response.json();
       setTasks((prev) => prev.map((t) => (t.id === taskId ? result.task : t)));
       return result.task as Task;
     },
@@ -97,8 +101,7 @@ export function useProjectTasks(projectId: string) {
       });
 
       if (!response.ok) {
-        const result = await response.json();
-        throw new Error(result.error || "Failed to delete task");
+        await parseApiError(response, "Failed to delete task");
       }
 
       setTasks((prev) => prev.filter((t) => t.id !== taskId));
@@ -106,10 +109,34 @@ export function useProjectTasks(projectId: string) {
     [projectId],
   );
 
+  const fetchMore = useCallback(async () => {
+    if (!cursorRef.current) return;
+
+    try {
+      const params = new URLSearchParams();
+      params.set("cursor", cursorRef.current);
+
+      const response = await fetch(`/api/projects/${projectId}/tasks?${params}`);
+
+      if (!response.ok) {
+        await parseApiError(response, "Failed to fetch tasks");
+      }
+
+      const data = await response.json();
+      setTasks((prev) => [...prev, ...data.tasks]);
+      setHasMore(data.hasMore ?? false);
+      cursorRef.current = data.nextCursor;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
+    }
+  }, [projectId]);
+
   return {
     tasks,
     loading,
     error,
+    hasMore,
+    fetchMore,
     tasksBySectionId,
     taskCountBySectionId,
     createTask,
