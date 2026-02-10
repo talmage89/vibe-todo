@@ -18,7 +18,9 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import type { Section } from "~/features/sections/types";
-import type { Subtask, Tag, Task, TaskUpdates } from "../types";
+import { useSubtasks } from "../hooks/use-subtasks";
+import { useTask } from "../hooks/use-task";
+import type { Tag } from "../types";
 import { TaskPriority, TaskStatus } from "../types";
 import { ActivityLog } from "./activity-log";
 import { DescriptionField } from "./description-field";
@@ -30,19 +32,11 @@ import { TitleField } from "./title-field";
 interface TaskDetailModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  task: Task | null;
-  loading: boolean;
+  projectId: string;
+  taskId: string | null;
   sections: Section[];
   availableTags?: Tag[];
-  onUpdateTask: (updates: TaskUpdates) => Promise<Task>;
-  onDeleteTask: () => Promise<void>;
-  onCreateSubtask: (title: string) => Promise<Subtask>;
-  onUpdateSubtask: (
-    subtaskId: string,
-    updates: Partial<Pick<Subtask, "title" | "completed">>,
-  ) => Promise<Subtask>;
-  onDeleteSubtask: (subtaskId: string) => Promise<void>;
-  onReorderSubtasks: (subtaskIds: string[]) => Promise<void>;
+  onDeleted?: () => void;
 }
 
 const PRIORITY_OPTIONS: { value: TaskPriority; label: string }[] = [
@@ -64,30 +58,32 @@ const NO_SECTION_VALUE = "__none__";
 export function TaskDetailModal({
   open,
   onOpenChange,
-  task,
-  loading,
+  projectId,
+  taskId,
   sections,
   availableTags = [],
-  onUpdateTask,
-  onDeleteTask,
-  onCreateSubtask,
-  onUpdateSubtask,
-  onDeleteSubtask,
-  onReorderSubtasks,
+  onDeleted,
 }: TaskDetailModalProps) {
+  const { task, loading, updateTask, deleteTask } = useTask(projectId, taskId);
+  const { createSubtask, updateSubtask, deleteSubtask, reorderSubtasks } = useSubtasks(
+    projectId,
+    taskId,
+  );
+
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   const handleDelete = useCallback(async () => {
     try {
       setDeleteLoading(true);
-      await onDeleteTask();
+      await deleteTask();
       setShowDeleteConfirm(false);
       onOpenChange(false);
+      onDeleted?.();
     } catch {
       setDeleteLoading(false);
     }
-  }, [onDeleteTask, onOpenChange]);
+  }, [deleteTask, onOpenChange, onDeleted]);
 
   if (!task && !loading) {
     return null;
@@ -106,11 +102,11 @@ export function TaskDetailModal({
               <div className="py-8 text-center text-secondary text-sm">Loading...</div>
             ) : task ? (
               <>
-                <TitleField value={task.title} onSave={(title) => onUpdateTask({ title })} />
+                <TitleField value={task.title} onSave={(title) => updateTask({ title })} />
 
                 <DescriptionField
                   value={task.description}
-                  onSave={(description) => onUpdateTask({ description })}
+                  onSave={(description) => updateTask({ description })}
                 />
 
                 <div className="grid grid-cols-3 gap-4">
@@ -118,7 +114,7 @@ export function TaskDetailModal({
                     <label className="font-medium text-secondary text-xs">Status</label>
                     <Select
                       value={task.status}
-                      onValueChange={(value) => onUpdateTask({ status: value as TaskStatus })}
+                      onValueChange={(value) => updateTask({ status: value as TaskStatus })}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -137,7 +133,7 @@ export function TaskDetailModal({
                     <label className="font-medium text-secondary text-xs">Priority</label>
                     <Select
                       value={task.priority}
-                      onValueChange={(value) => onUpdateTask({ priority: value as TaskPriority })}
+                      onValueChange={(value) => updateTask({ priority: value as TaskPriority })}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -157,7 +153,7 @@ export function TaskDetailModal({
                     <Select
                       value={task.sectionId ?? NO_SECTION_VALUE}
                       onValueChange={(value) =>
-                        onUpdateTask({ sectionId: value === NO_SECTION_VALUE ? null : value })
+                        updateTask({ sectionId: value === NO_SECTION_VALUE ? null : value })
                       }
                     >
                       <SelectTrigger>
@@ -175,10 +171,7 @@ export function TaskDetailModal({
                   </div>
                 </div>
 
-                <DueDateField
-                  value={task.dueDate}
-                  onSave={(dueDate) => onUpdateTask({ dueDate })}
-                />
+                <DueDateField value={task.dueDate} onSave={(dueDate) => updateTask({ dueDate })} />
 
                 {availableTags.length > 0 && (
                   <div className="space-y-1.5">
@@ -186,17 +179,17 @@ export function TaskDetailModal({
                     <TagSelect
                       tags={availableTags}
                       selectedIds={task.tags.map((t) => t.id)}
-                      onChange={(tagIds) => onUpdateTask({ tagIds })}
+                      onChange={(tagIds) => updateTask({ tagIds })}
                     />
                   </div>
                 )}
 
                 <SubtaskList
                   subtasks={task.subtasks}
-                  onCreateSubtask={onCreateSubtask}
-                  onUpdateSubtask={onUpdateSubtask}
-                  onDeleteSubtask={onDeleteSubtask}
-                  onReorderSubtasks={onReorderSubtasks}
+                  onCreateSubtask={createSubtask}
+                  onUpdateSubtask={updateSubtask}
+                  onDeleteSubtask={deleteSubtask}
+                  onReorderSubtasks={reorderSubtasks}
                 />
 
                 <ActivityLog />
