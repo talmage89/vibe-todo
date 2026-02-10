@@ -283,7 +283,13 @@ export function ProjectView() {
             </DndContext>
           </div>
         </div>
-        {view === DefaultView.KANBAN && <KanbanBoard tasks={tasks} onClickTask={handleClickTask} />}
+        {view === DefaultView.KANBAN && (
+          <KanbanBoard
+            tasks={tasks}
+            onClickTask={handleClickTask}
+            onUpdateTaskStatus={handleToggleStatus}
+          />
+        )}
       </main>
 
       <TaskCreateModal
