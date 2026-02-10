@@ -13,6 +13,7 @@ export const queryKeys = {
   crossProjectTasks: {
     inbox: ["tasks", "inbox"] as const,
     today: ["tasks", "today"] as const,
+    overdue: ["tasks", "overdue"] as const,
     upcoming: ["tasks", "upcoming"] as const,
   },
   tags: {

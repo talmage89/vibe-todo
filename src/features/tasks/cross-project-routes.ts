@@ -18,6 +18,12 @@ async function getTodayHandler({ user }: HandlerProps) {
   return { success: true, ...result };
 }
 
+async function getOverdueHandler({ user }: HandlerProps) {
+  const authenticatedUser = requireAuth(user);
+  const result = await crossProjectService.getOverdueTasks(authenticatedUser.id);
+  return { success: true, ...result };
+}
+
 async function getUpcomingHandler({ user }: HandlerProps) {
   const authenticatedUser = requireAuth(user);
   const result = await crossProjectService.getUpcomingTasks(authenticatedUser.id);
@@ -28,4 +34,5 @@ export const crossProjectTaskRoutes = new Elysia()
   .use(authMiddleware)
   .get("/tasks/inbox", getInboxHandler)
   .get("/tasks/today", getTodayHandler)
+  .get("/tasks/overdue", getOverdueHandler)
   .get("/tasks/upcoming", getUpcomingHandler);
