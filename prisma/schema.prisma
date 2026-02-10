@@ -18,7 +18,7 @@ model User {
   name        String?
   avatar      String?
   theme       Theme       @default(SYSTEM)
-  defaultView DefaultView @default(LIST)
+  defaultView DefaultView @default(KANBAN)
 
   defaultProjectId String?
   defaultProject   Project? @relation("DefaultProject", fields: [defaultProjectId], references: [id], onDelete: SetNull)
@@ -96,7 +96,7 @@ model Project {
 
   name        String
   color       String?
-  defaultView DefaultView @default(LIST)
+  defaultView DefaultView @default(KANBAN)
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)

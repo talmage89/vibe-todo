@@ -8,8 +8,8 @@ interface ViewToggleProps {
 }
 
 const options = [
-  { value: DefaultView.LIST, label: "List", icon: ListBulletIcon },
   { value: DefaultView.KANBAN, label: "Board", icon: ViewColumnsIcon },
+  { value: DefaultView.LIST, label: "List", icon: ListBulletIcon },
 ] as const;
 
 export function ViewToggle({ value, onChange }: ViewToggleProps) {
@@ -25,8 +25,8 @@ export function ViewToggle({ value, onChange }: ViewToggleProps) {
             value === option.value
               ? "bg-surface text-primary"
               : "text-secondary hover:bg-surface/50 hover:text-primary",
-            option.value === DefaultView.LIST && "rounded-l",
-            option.value === DefaultView.KANBAN && "rounded-r",
+            option.value === DefaultView.KANBAN && "rounded-l",
+            option.value === DefaultView.LIST && "rounded-r",
           )}
           title={`${option.label} view`}
         >

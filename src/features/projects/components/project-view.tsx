@@ -51,7 +51,7 @@ export function ProjectView() {
     select: (data) => data.project,
   });
 
-  const { view, setView } = useProjectView(projectId, project?.defaultView ?? DefaultView.LIST);
+  const { view, setView } = useProjectView(projectId, project?.defaultView ?? DefaultView.KANBAN);
 
   const {
     sections,
