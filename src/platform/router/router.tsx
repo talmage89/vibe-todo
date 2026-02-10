@@ -8,11 +8,14 @@ import {
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { AppLayout } from "~/components/layout/app-layout";
 import { Login } from "~/features/auth/components/login";
+import { InboxView } from "~/features/inbox/components/inbox-view";
 import { ProjectSettings } from "~/features/projects/components/project-settings";
 import { ProjectView } from "~/features/projects/components/project-view";
 import { Settings } from "~/features/settings/components/settings";
 import { isSettingsSection, type SettingsSearch } from "~/features/settings/types";
-import { Tmp } from "~/features/tmp";
+import { Tmp } from "~/features/tmp/index";
+import { TodayView } from "~/features/today/components/today-view";
+import { UpcomingView } from "~/features/upcoming/components/upcoming-view";
 import { ProtectedRoute } from "~/platform/auth/protected-route";
 
 const RootRoute = createRootRoute({
@@ -36,7 +39,31 @@ const IndexRoute = createRoute({
   component: () => (
     <ProtectedRoute>
       <AppLayout>
-        <Tmp />
+        <InboxView />
+      </AppLayout>
+    </ProtectedRoute>
+  ),
+});
+
+const TodayRoute = createRoute({
+  getParentRoute: () => RootRoute,
+  path: "/today",
+  component: () => (
+    <ProtectedRoute>
+      <AppLayout>
+        <TodayView />
+      </AppLayout>
+    </ProtectedRoute>
+  ),
+});
+
+const UpcomingRoute = createRoute({
+  getParentRoute: () => RootRoute,
+  path: "/upcoming",
+  component: () => (
+    <ProtectedRoute>
+      <AppLayout>
+        <UpcomingView />
       </AppLayout>
     </ProtectedRoute>
   ),
@@ -81,12 +108,27 @@ const SettingsRoute = createRoute({
   ),
 });
 
+const TmpRoute = createRoute({
+  getParentRoute: () => RootRoute,
+  path: "/_tmp",
+  component: () => (
+    <ProtectedRoute>
+      <AppLayout>
+        <Tmp />
+      </AppLayout>
+    </ProtectedRoute>
+  ),
+});
+
 export const routeTree = RootRoute.addChildren([
   IndexRoute,
   LoginRoute,
+  TodayRoute,
+  UpcomingRoute,
   ProjectRoute,
   ProjectSettingsRoute,
   SettingsRoute,
+  TmpRoute,
 ]);
 
 export const createAppRouter = (url: string) =>
