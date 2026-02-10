@@ -40,7 +40,35 @@ export function useTasks(projectId: string, sectionId?: string | null) {
         method: "POST",
         body: JSON.stringify(data),
       }),
-    onSuccess: () => {
+    onMutate: async (data) => {
+      await queryClient.cancelQueries({ queryKey: tasksKey });
+      const previous = queryClient.getQueryData<TasksResponse>(tasksKey);
+      queryClient.setQueryData<TasksResponse>(tasksKey, (old) => {
+        if (!old) return old;
+        const now = new Date().toISOString();
+        const optimistic: Task = {
+          id: `temp-${crypto.randomUUID()}`,
+          title: data.title,
+          description: data.description ?? null,
+          dueDate: data.dueDate instanceof Date ? data.dueDate.toISOString() : null,
+          priority: data.priority ?? "NONE",
+          status: data.status ?? "TODO",
+          position: old.tasks.length,
+          projectId,
+          sectionId: data.sectionId ?? null,
+          createdAt: now,
+          updatedAt: now,
+          subtasks: [],
+          tags: [],
+        };
+        return { tasks: [...old.tasks, optimistic] };
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(tasksKey, context.previous);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: allTasksKey });
     },
   });
@@ -51,7 +79,28 @@ export function useTasks(projectId: string, sectionId?: string | null) {
         method: "PATCH",
         body: JSON.stringify(data),
       }),
-    onSuccess: () => {
+    onMutate: async ({ taskId, data }) => {
+      await queryClient.cancelQueries({ queryKey: tasksKey });
+      const previous = queryClient.getQueryData<TasksResponse>(tasksKey);
+      const patch: Partial<Task> = {
+        ...data,
+        dueDate:
+          data.dueDate instanceof Date
+            ? data.dueDate.toISOString()
+            : (data.dueDate as string | null | undefined),
+      };
+      queryClient.setQueryData<TasksResponse>(tasksKey, (old) => {
+        if (!old) return old;
+        return {
+          tasks: old.tasks.map((t) => (t.id === taskId ? { ...t, ...patch } : t)),
+        };
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(tasksKey, context.previous);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: allTasksKey });
     },
   });
@@ -59,7 +108,19 @@ export function useTasks(projectId: string, sectionId?: string | null) {
   const deleteMutation = useMutation({
     mutationFn: (taskId: string) =>
       api<void>(`/api/projects/${projectId}/tasks/${taskId}`, { method: "DELETE" }),
-    onSuccess: () => {
+    onMutate: async (taskId) => {
+      await queryClient.cancelQueries({ queryKey: tasksKey });
+      const previous = queryClient.getQueryData<TasksResponse>(tasksKey);
+      queryClient.setQueryData<TasksResponse>(tasksKey, (old) => {
+        if (!old) return old;
+        return { tasks: old.tasks.filter((t) => t.id !== taskId) };
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(tasksKey, context.previous);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: allTasksKey });
     },
   });
@@ -76,7 +137,30 @@ export function useTasks(projectId: string, sectionId?: string | null) {
         method: "POST",
         body: JSON.stringify({ taskIds, sectionId: targetSectionId }),
       }),
-    onSuccess: () => {
+    onMutate: async ({ taskIds, targetSectionId }) => {
+      await queryClient.cancelQueries({ queryKey: tasksKey });
+      const previous = queryClient.getQueryData<TasksResponse>(tasksKey);
+      queryClient.setQueryData<TasksResponse>(tasksKey, (old) => {
+        if (!old) return old;
+        const updated = old.tasks.map((t) => {
+          const orderIndex = taskIds.indexOf(t.id);
+          if (orderIndex !== -1) {
+            return {
+              ...t,
+              position: orderIndex,
+              sectionId: targetSectionId === undefined ? t.sectionId : targetSectionId,
+            };
+          }
+          return t;
+        });
+        return { tasks: updated };
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(tasksKey, context.previous);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: allTasksKey });
     },
   });

@@ -21,11 +21,29 @@ export function useSubtasks(projectId: string, taskId: string | null) {
         method: "POST",
         body: JSON.stringify({ title }),
       }),
-    onSuccess: (data) => {
-      queryClient.setQueryData<{ task: { subtasks: Subtask[] } }>(detailKey, (old) => {
+    onMutate: async (title) => {
+      await queryClient.cancelQueries({ queryKey: detailKey });
+      const previous = queryClient.getQueryData<TaskResponse>(detailKey);
+      queryClient.setQueryData<TaskResponse>(detailKey, (old) => {
         if (!old) return old;
-        return { task: { ...old.task, subtasks: [...old.task.subtasks, data.subtask] } };
+        const optimistic: Subtask = {
+          id: `temp-${crypto.randomUUID()}`,
+          title,
+          completed: false,
+          position: old.task.subtasks.length,
+          taskId: taskId ?? "",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        return { task: { ...old.task, subtasks: [...old.task.subtasks, optimistic] } };
       });
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(detailKey, context.previous);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: detailKey });
     },
   });
 
@@ -41,16 +59,25 @@ export function useSubtasks(projectId: string, taskId: string | null) {
         method: "PATCH",
         body: JSON.stringify(updates),
       }),
-    onSuccess: (data) => {
+    onMutate: async ({ subtaskId, updates }) => {
+      await queryClient.cancelQueries({ queryKey: detailKey });
+      const previous = queryClient.getQueryData<TaskResponse>(detailKey);
       queryClient.setQueryData<TaskResponse>(detailKey, (old) => {
         if (!old) return old;
         return {
           task: {
             ...old.task,
-            subtasks: old.task.subtasks.map((s) => (s.id === data.subtask.id ? data.subtask : s)),
+            subtasks: old.task.subtasks.map((s) => (s.id === subtaskId ? { ...s, ...updates } : s)),
           },
         };
       });
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(detailKey, context.previous);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: detailKey });
     },
   });
 
@@ -59,7 +86,9 @@ export function useSubtasks(projectId: string, taskId: string | null) {
       api<void>(`/api/projects/${projectId}/tasks/${taskId}/subtasks/${subtaskId}`, {
         method: "DELETE",
       }),
-    onSuccess: (_data, subtaskId) => {
+    onMutate: async (subtaskId) => {
+      await queryClient.cancelQueries({ queryKey: detailKey });
+      const previous = queryClient.getQueryData<TaskResponse>(detailKey);
       queryClient.setQueryData<TaskResponse>(detailKey, (old) => {
         if (!old) return old;
         return {
@@ -69,6 +98,13 @@ export function useSubtasks(projectId: string, taskId: string | null) {
           },
         };
       });
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(detailKey, context.previous);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: detailKey });
     },
   });
 
@@ -78,11 +114,28 @@ export function useSubtasks(projectId: string, taskId: string | null) {
         method: "POST",
         body: JSON.stringify({ subtaskIds }),
       }),
-    onSuccess: (data) => {
+    onMutate: async (subtaskIds) => {
+      await queryClient.cancelQueries({ queryKey: detailKey });
+      const previous = queryClient.getQueryData<TaskResponse>(detailKey);
       queryClient.setQueryData<TaskResponse>(detailKey, (old) => {
         if (!old) return old;
-        return { task: { ...old.task, subtasks: data.subtasks } };
+        const subtaskMap = new Map(old.task.subtasks.map((s) => [s.id, s]));
+        const reordered = subtaskIds
+          .map((id, index) => {
+            const subtask = subtaskMap.get(id);
+            if (!subtask) return null;
+            return { ...subtask, position: index };
+          })
+          .filter((s): s is Subtask => s !== null);
+        return { task: { ...old.task, subtasks: reordered } };
       });
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(detailKey, context.previous);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: detailKey });
     },
   });
 

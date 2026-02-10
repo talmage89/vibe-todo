@@ -31,7 +31,24 @@ export function useTags(projectId: string) {
         method: "POST",
         body: JSON.stringify(input),
       }),
-    onSuccess: () => {
+    onMutate: async (input) => {
+      await queryClient.cancelQueries({ queryKey: tagsKey });
+      const previous = queryClient.getQueryData<TagsResponse>(tagsKey);
+      queryClient.setQueryData<TagsResponse>(tagsKey, (old) => {
+        if (!old) return old;
+        const optimistic: Tag = {
+          id: `temp-${crypto.randomUUID()}`,
+          name: input.name,
+          color: input.color,
+        };
+        return { tags: [...old.tags, optimistic] };
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(tagsKey, context.previous);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: tagsKey });
     },
   });
@@ -48,7 +65,21 @@ export function useTags(projectId: string) {
         method: "PATCH",
         body: JSON.stringify(updates),
       }),
-    onSuccess: () => {
+    onMutate: async ({ tagId, updates }) => {
+      await queryClient.cancelQueries({ queryKey: tagsKey });
+      const previous = queryClient.getQueryData<TagsResponse>(tagsKey);
+      queryClient.setQueryData<TagsResponse>(tagsKey, (old) => {
+        if (!old) return old;
+        return {
+          tags: old.tags.map((t) => (t.id === tagId ? { ...t, ...updates } : t)),
+        };
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(tagsKey, context.previous);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: tagsKey });
     },
   });
@@ -56,7 +87,19 @@ export function useTags(projectId: string) {
   const deleteMutation = useMutation({
     mutationFn: (tagId: string) =>
       api<void>(`/api/projects/${projectId}/tags/${tagId}`, { method: "DELETE" }),
-    onSuccess: () => {
+    onMutate: async (tagId) => {
+      await queryClient.cancelQueries({ queryKey: tagsKey });
+      const previous = queryClient.getQueryData<TagsResponse>(tagsKey);
+      queryClient.setQueryData<TagsResponse>(tagsKey, (old) => {
+        if (!old) return old;
+        return { tags: old.tags.filter((t) => t.id !== tagId) };
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(tagsKey, context.previous);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: tagsKey });
     },
   });

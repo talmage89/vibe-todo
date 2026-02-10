@@ -62,18 +62,43 @@ export function ProjectSettings() {
         method: "PATCH",
         body: JSON.stringify(input),
       }),
+    onMutate: async (input) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.projects.detail(projectId) });
+      await queryClient.cancelQueries({ queryKey: queryKeys.projects.all });
+      const previousDetail = queryClient.getQueryData<ProjectResponse>(
+        queryKeys.projects.detail(projectId),
+      );
+      const previousAll = queryClient.getQueryData(queryKeys.projects.all);
+      queryClient.setQueryData<ProjectResponse>(queryKeys.projects.detail(projectId), (old) => {
+        if (!old) return old;
+        return { project: { ...old.project, ...input } };
+      });
+      queryClient.setQueryData<{ projects: Project[] }>(queryKeys.projects.all, (old) => {
+        if (!old) return old;
+        return {
+          projects: old.projects.map((p) => (p.id === projectId ? { ...p, ...input } : p)),
+        };
+      });
+      return { previousDetail, previousAll };
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(projectId) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
       setHasChanges(false);
       toast({ title: "Project updated", variant: "success" });
     },
-    onError: (err) => {
+    onError: (err, _vars, context) => {
+      if (context?.previousDetail)
+        queryClient.setQueryData(queryKeys.projects.detail(projectId), context.previousDetail);
+      if (context?.previousAll)
+        queryClient.setQueryData(queryKeys.projects.all, context.previousAll);
       toast({
         title: "Failed to update project",
         description: err.message,
         variant: "error",
       });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(projectId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
     },
   });
 
