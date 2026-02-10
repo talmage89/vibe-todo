@@ -1,4 +1,5 @@
 import {
+  ArrowTopRightOnSquareIcon,
   CalendarIcon,
   CheckCircleIcon,
   ChevronUpDownIcon,
@@ -75,12 +76,14 @@ export function TaskListItem({
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(task.title);
   const [saving, setSaving] = useState(false);
+  const [priorityMenuOpen, setPriorityMenuOpen] = useState(false);
   const [tagMenuOpen, setTagMenuOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const isDone = task.status === TaskStatus.DONE;
   const priorityColor = PRIORITY_COLORS[task.priority];
   const completedSubtasks = task.subtasks.filter((s) => s.completed).length;
   const totalSubtasks = task.subtasks.length;
+  const hasMenuOpen = priorityMenuOpen || tagMenuOpen;
 
   useEffect(() => {
     setEditValue(task.title);
@@ -174,16 +177,10 @@ export function TaskListItem({
 
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onClick={() => onClick(task.id)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onClick(task.id);
-        }
-      }}
-      className="group flex w-full items-center gap-2 rounded px-3 py-1.5 text-left text-sm transition-colors hover:bg-surface active:opacity-90"
+      className={cn(
+        "group/task flex w-full items-center gap-2 rounded px-3 py-1.5 text-left text-sm transition-colors hover:bg-surface",
+        hasMenuOpen && "bg-surface",
+      )}
     >
       <span
         role="checkbox"
@@ -197,7 +194,7 @@ export function TaskListItem({
           }
         }}
         className={cn(
-          "flex shrink-0 items-center justify-center rounded-full transition-colors",
+          "flex shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors",
           isDone ? "text-accent" : "text-secondary hover:text-primary",
           toggling && "opacity-50",
         )}
@@ -210,7 +207,7 @@ export function TaskListItem({
       </span>
 
       {isEditing ? (
-        <div className="min-w-0 flex-1" onClick={(e) => e.stopPropagation()}>
+        <div className="min-w-0 flex-1">
           <Input
             ref={inputRef}
             value={editValue}
@@ -223,7 +220,15 @@ export function TaskListItem({
         </div>
       ) : (
         <span
+          role="button"
+          tabIndex={0}
           onClick={handleStartEdit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              handleStartEdit(e as unknown as React.MouseEvent);
+            }
+          }}
           className={cn(
             "min-w-0 flex-1 cursor-text truncate",
             isDone ? "text-secondary line-through" : "text-primary",
@@ -251,7 +256,9 @@ export function TaskListItem({
         {task.dueDate && (
           <span
             className={cn(
-              "flex items-center gap-0.5 text-xs group-hover:hidden",
+              "flex items-center gap-0.5 text-xs",
+              hasMenuOpen && "hidden",
+              !hasMenuOpen && "group-hover/task:hidden",
               isDone
                 ? "text-secondary"
                 : isDueDateOverdue(task.dueDate)
@@ -267,14 +274,21 @@ export function TaskListItem({
         {priorityColor && !isDone && (
           <span
             className={cn(
-              "h-1.5 w-1.5 shrink-0 rounded-full bg-current group-hover:hidden",
+              "h-1.5 w-1.5 shrink-0 rounded-full bg-current",
+              hasMenuOpen && "hidden",
+              !hasMenuOpen && "group-hover/task:hidden",
               priorityColor,
             )}
           />
         )}
 
-        <span className="hidden items-center gap-0.5 group-hover:flex">
-          <div className="relative" onClick={(e) => e.stopPropagation()}>
+        <span
+          className={cn(
+            "items-center gap-0.5",
+            hasMenuOpen ? "flex" : "hidden group-hover/task:flex",
+          )}
+        >
+          <div className="relative">
             <label
               className={cn(
                 "flex h-6 w-6 cursor-pointer items-center justify-center rounded text-secondary transition-colors hover:bg-border hover:text-primary",
@@ -292,11 +306,10 @@ export function TaskListItem({
             </label>
           </div>
 
-          <DropdownMenu>
+          <DropdownMenu open={priorityMenuOpen} onOpenChange={setPriorityMenuOpen}>
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                onClick={(e) => e.stopPropagation()}
                 className={cn(
                   "flex h-6 w-6 items-center justify-center rounded text-secondary transition-colors hover:bg-border hover:text-primary",
                   task.priority !== TaskPriority.NONE && priorityColor,
@@ -319,7 +332,7 @@ export function TaskListItem({
           </DropdownMenu>
 
           {availableTags.length > 0 && (
-            <div className="relative" onClick={(e) => e.stopPropagation()}>
+            <div className="relative">
               <button
                 type="button"
                 onClick={() => setTagMenuOpen(!tagMenuOpen)}
@@ -373,6 +386,15 @@ export function TaskListItem({
               )}
             </div>
           )}
+
+          <button
+            type="button"
+            onClick={() => onClick(task.id)}
+            className="flex h-6 w-6 items-center justify-center rounded text-secondary transition-colors hover:bg-border hover:text-primary"
+            title="Open details"
+          >
+            <ArrowTopRightOnSquareIcon className="h-3.5 w-3.5" />
+          </button>
         </span>
       </span>
     </div>
