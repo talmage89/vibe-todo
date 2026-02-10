@@ -1,7 +1,8 @@
-import { FunnelIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { FunnelIcon } from "@heroicons/react/24/outline";
 import { useCallback, useState } from "react";
 import { cn } from "~/components/ui/cn";
 import type { Tag } from "../types";
+import { TagChip } from "./tag-chip";
 
 interface TagFilterProps {
   tags: Tag[];
@@ -55,22 +56,7 @@ export function TagFilter({ tags, selectedTagIds, onChange }: TagFilterProps) {
           {selectedTagIds.map((tagId) => {
             const tag = tags.find((t) => t.id === tagId);
             if (!tag) return null;
-            return (
-              <span
-                key={tag.id}
-                className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs"
-                style={{ backgroundColor: `${tag.color}20`, color: tag.color }}
-              >
-                {tag.name}
-                <button
-                  type="button"
-                  onClick={() => toggleTag(tag.id)}
-                  className="rounded hover:bg-black/10"
-                >
-                  <XMarkIcon className="h-3 w-3" />
-                </button>
-              </span>
-            );
+            return <TagChip key={tag.id} tag={tag} onRemove={toggleTag} />;
           })}
           <button
             type="button"

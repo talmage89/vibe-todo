@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { cn } from "~/components/ui/cn";
 import type { Task } from "../types";
 import { TaskPriority, TaskStatus } from "../types";
+import { TagChip } from "./tag-chip";
 
 interface TaskListItemProps {
   task: Task;
@@ -99,6 +100,14 @@ export function TaskListItem({ task, onToggleStatus, onClick }: TaskListItemProp
       </span>
 
       <span className="flex shrink-0 items-center gap-2">
+        {task.tags.length > 0 && !isDone && (
+          <span className="flex items-center gap-1">
+            {task.tags.map((tag) => (
+              <TagChip key={tag.id} tag={tag} className="leading-none" />
+            ))}
+          </span>
+        )}
+
         {totalSubtasks > 0 && (
           <span className="text-secondary text-xs">
             {completedSubtasks}/{totalSubtasks}
