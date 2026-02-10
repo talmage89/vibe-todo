@@ -11,7 +11,6 @@ import { TaskCreateModal } from "~/features/tasks/components/task-create-modal";
 import { TaskDetailModal } from "~/features/tasks/components/task-detail-modal";
 import { useProjectTasks } from "~/features/tasks/hooks/use-project-tasks";
 import { useTags } from "~/features/tasks/hooks/use-tags";
-import { useTask } from "~/features/tasks/hooks/use-task";
 import type { TaskStatus } from "~/features/tasks/types";
 import { api } from "~/platform/query/api";
 import { queryKeys } from "~/platform/query/query-keys";
@@ -51,17 +50,6 @@ export function ProjectView() {
   const { tags } = useTags(projectId);
   const [filterTagIds, setFilterTagIds] = useState<string[]>([]);
 
-  const {
-    task: selectedTask,
-    loading: taskLoading,
-    updateTask: updateSelectedTask,
-    deleteTask: deleteSelectedTask,
-    createSubtask,
-    updateSubtask,
-    deleteSubtask,
-    reorderSubtasks,
-  } = useTask(projectId, selectedTaskId);
-
   const handleClickTask = useCallback((taskId: string) => {
     setSelectedTaskId(taskId);
     setDetailModalOpen(true);
@@ -88,18 +76,15 @@ export function ProjectView() {
     [createTask],
   );
 
-  const handleDeleteSelectedTask = useCallback(async () => {
-    if (!selectedTaskId) return;
-    await deleteSelectedTask();
-    setDetailModalOpen(false);
-    setSelectedTaskId(null);
-  }, [selectedTaskId, deleteSelectedTask]);
-
   const handleDetailModalOpenChange = useCallback((open: boolean) => {
     setDetailModalOpen(open);
     if (!open) {
       setSelectedTaskId(null);
     }
+  }, []);
+
+  const handleTaskDeleted = useCallback(() => {
+    setSelectedTaskId(null);
   }, []);
 
   const handleOpenCreateModal = useCallback((sectionId?: string | null) => {
@@ -226,16 +211,11 @@ export function ProjectView() {
       <TaskDetailModal
         open={detailModalOpen}
         onOpenChange={handleDetailModalOpenChange}
-        task={selectedTask}
-        loading={taskLoading}
+        projectId={projectId}
+        taskId={selectedTaskId}
         sections={sections}
         availableTags={tags}
-        onUpdateTask={updateSelectedTask}
-        onDeleteTask={handleDeleteSelectedTask}
-        onCreateSubtask={createSubtask}
-        onUpdateSubtask={updateSubtask}
-        onDeleteSubtask={deleteSubtask}
-        onReorderSubtasks={reorderSubtasks}
+        onDeleted={handleTaskDeleted}
       />
     </div>
   );
