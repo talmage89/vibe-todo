@@ -170,6 +170,9 @@ function tryParseJsonBestEffort(text: string): unknown {
 }
 
 function formatValue(value: unknown, indent: number, raw: boolean): string {
+  if (value === undefined) {
+    throw new Error("Selected value is undefined (path/pointer not found).");
+  }
   if (
     raw &&
     (typeof value === "string" || typeof value === "number" || typeof value === "boolean")
@@ -255,6 +258,9 @@ if (file) {
 }
 
 try {
+  if (inputText.trim().length === 0) {
+    throw new Error("No input received on stdin.");
+  }
   const root = tryParseJsonBestEffort(inputText);
   const selected =
     pointer !== undefined
