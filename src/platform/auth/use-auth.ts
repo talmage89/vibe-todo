@@ -1,72 +1,65 @@
-import { useCallback, useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { User } from "~/platform/db/generated";
+import { queryKeys } from "~/platform/query/query-keys";
 
-interface AuthState {
+interface UseAuthReturn {
   user: User | null;
   loading: boolean;
   error: string | null;
-}
-
-interface UseAuthReturn extends AuthState {
   refetch: () => Promise<void>;
   logout: () => Promise<void>;
 }
 
+async function fetchUser(): Promise<User | null> {
+  const response = await fetch("/api/me");
+
+  if (response.status === 401) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch user: ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  return data.success && data.user ? data.user : null;
+}
+
 export const useAuth = (): UseAuthReturn => {
-  const [state, setState] = useState<AuthState>({
-    user: null,
-    loading: true,
-    error: null,
+  const queryClient = useQueryClient();
+
+  const {
+    data: user,
+    isLoading: loading,
+    error: queryError,
+    refetch,
+  } = useQuery({
+    queryKey: queryKeys.auth.user,
+    queryFn: fetchUser,
+    retry: false,
   });
 
-  const fetchUser = useCallback(async () => {
-    try {
-      setState((prev) => ({ ...prev, loading: true, error: null }));
-
-      const response = await fetch("/api/me");
-
-      if (response.status === 401) {
-        setState({ user: null, loading: false, error: null });
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch user: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-
-      if (data.success && data.user) {
-        setState({ user: data.user, loading: false, error: null });
-      } else {
-        setState({ user: null, loading: false, error: null });
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to fetch user";
-      setState({ user: null, loading: false, error: errorMessage });
-    }
-  }, []);
-
-  const logout = useCallback(async () => {
-    try {
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
       const response = await fetch("/auth/logout", { method: "POST" });
       if (!response.ok) {
         throw new Error(`Logout failed: ${response.statusText}`);
       }
-      setState({ user: null, loading: false, error: null });
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Logout failed";
-      setState((prev) => ({ ...prev, error: errorMessage }));
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchUser();
-  }, [fetchUser]);
+    },
+    onSuccess: () => {
+      queryClient.setQueryData(queryKeys.auth.user, null);
+    },
+  });
 
   return {
-    ...state,
-    refetch: fetchUser,
-    logout,
+    user: user ?? null,
+    loading,
+    error: queryError?.message ?? logoutMutation.error?.message ?? null,
+    refetch: async () => {
+      await refetch();
+    },
+    logout: async () => {
+      await logoutMutation.mutateAsync();
+    },
   };
 };
