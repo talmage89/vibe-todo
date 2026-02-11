@@ -53,3 +53,12 @@ export type Highlight = {
 export type SearchResult = SearchResultTask & {
   highlights: Highlight[];
 };
+
+export type SearchTask = SearchResultTask;
+
+export interface SearchTasksResponse {
+  results: SearchResult[];
+  nextCursor?: string;
+  hasMore: boolean;
+  total: number;
+}

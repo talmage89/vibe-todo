@@ -18,8 +18,8 @@ export function useSearchTasks(query: string) {
     error: queryError,
   } = useQuery({
     queryKey: searchKey,
-    queryFn: () => api<SearchTasksResponse>(`/api/tasks/search?q=${encodeURIComponent(query)}`),
-    select: (data) => data.tasks,
+    queryFn: () => api<SearchTasksResponse>(`/api/search?q=${encodeURIComponent(query)}`),
+    select: (data) => data.results,
     enabled: query.length > 0,
   });
 
