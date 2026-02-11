@@ -68,6 +68,8 @@ export async function search(userId: string, options: SearchOptions) {
         OR: [
           { title: { contains: query, mode: "insensitive" } },
           { description: { contains: query, mode: "insensitive" } },
+          { tags: { some: { name: { contains: query, mode: "insensitive" } } } },
+          { project: { name: { contains: query, mode: "insensitive" } } },
         ],
       },
       ...(options.status ? [{ status: options.status }] : []),
