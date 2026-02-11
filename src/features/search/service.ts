@@ -13,6 +13,8 @@ export async function searchTasks(userId: string, query: string) {
       OR: [
         { title: { contains: query, mode: "insensitive" } },
         { description: { contains: query, mode: "insensitive" } },
+        { tags: { some: { name: { contains: query, mode: "insensitive" } } } },
+        { project: { name: { contains: query, mode: "insensitive" } } },
       ],
     },
     include: searchTaskInclude,
