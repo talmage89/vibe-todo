@@ -36,15 +36,21 @@ function groupByProject(tasks: SearchTask[]): ProjectGroup[] {
 
 function highlightMatch(text: string, query: string): React.ReactNode {
   if (!query) return text;
-  const index = text.toLowerCase().indexOf(query.toLowerCase());
-  if (index === -1) return text;
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const parts = text.split(new RegExp(`(${escaped})`, "gi"));
+  if (parts.length === 1) return text;
+  const lower = query.toLowerCase();
   return (
     <>
-      {text.slice(0, index)}
-      <mark className="rounded-sm bg-accent/20 text-primary">
-        {text.slice(index, index + query.length)}
-      </mark>
-      {text.slice(index + query.length)}
+      {parts.map((part, i) =>
+        part.toLowerCase() === lower ? (
+          <mark key={i} className="rounded-sm bg-accent/20 text-primary">
+            {part}
+          </mark>
+        ) : (
+          part
+        ),
+      )}
     </>
   );
 }
@@ -133,7 +139,7 @@ export const SearchView = () => {
           value={inputValue}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
-          placeholder="Search tasks..."
+          placeholder="Search tasks, projects, tags..."
           className="h-8 flex-1 border-none bg-transparent shadow-none focus-visible:ring-0"
           autoFocus
         />
@@ -150,7 +156,7 @@ export const SearchView = () => {
 
       {!hasQuery && (
         <div className="flex flex-1 items-center justify-center">
-          <p className="text-secondary text-sm">Type to search across all tasks</p>
+          <p className="text-secondary text-sm">Type to search across tasks, projects, and tags</p>
         </div>
       )}
 
@@ -246,7 +252,7 @@ function SearchProjectGroup({
           />
         )}
         <h2 className="font-medium text-secondary text-xs uppercase tracking-wide">
-          {group.projectName}
+          {highlightMatch(group.projectName, query)}
         </h2>
       </div>
       {group.tasks.map((task) => (
