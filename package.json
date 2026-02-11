@@ -14,7 +14,7 @@
     "build:css": "NODE_ENV=production bunx --bun tailwindcss -i src/index.css -o dist/public/styles.css --minify",
     "start": "NODE_ENV=production bun run dist/server/entry-server.js",
     "json": "bun ./cmd/json.ts",
-    "cli": "bun ./cmd/cli.ts",
+    "cli": "bun ./cmd/cli/index.ts",
     "gitea": "bun ./cmd/gitea.ts",
     "check": "run-s check:lint check:format check:types",
     "check:fix": "run-s check:lint:fix check:format:write check:types",

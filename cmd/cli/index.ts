@@ -1,9 +1,9 @@
-import { run as authRun } from "./cli/commands/auth";
-import { run as inboxRun } from "./cli/commands/inbox";
-import { run as projectsRun } from "./cli/commands/projects";
-import { run as tasksRun } from "./cli/commands/tasks";
-import { run as todayRun } from "./cli/commands/today";
-import { run as upcomingRun } from "./cli/commands/upcoming";
+import { run as authRun } from "./commands/auth";
+import { run as inboxRun } from "./commands/inbox";
+import { run as projectsRun } from "./commands/projects";
+import { run as tasksRun } from "./commands/tasks";
+import { run as todayRun } from "./commands/today";
+import { run as upcomingRun } from "./commands/upcoming";
 
 const VERSION = "0.1.0";
 
