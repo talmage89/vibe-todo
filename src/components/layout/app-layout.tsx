@@ -11,7 +11,7 @@ interface AppLayoutProps {
 
 export const AppLayout = ({ children, onAddTask }: AppLayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { open: paletteOpen, setOpen: setPaletteOpen, close: closePalette } = useCommandPalette();
+  const { open: paletteOpen, setOpen: setPaletteOpen } = useCommandPalette();
 
   return (
     <div className="flex h-screen bg-background">
@@ -26,7 +26,7 @@ export const AppLayout = ({ children, onAddTask }: AppLayoutProps) => {
         <main className="flex-1 overflow-y-auto">{children}</main>
       </div>
 
-      <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} onClose={closePalette} />
+      <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
     </div>
   );
 };

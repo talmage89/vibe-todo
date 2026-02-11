@@ -8,7 +8,6 @@ import type { Command, CommandType } from "../types";
 interface CommandPaletteProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onClose: () => void;
 }
 
 const typeLabels: Record<CommandType, string> = {
@@ -41,13 +40,14 @@ function groupCommands(commands: Command[]): [CommandType, Command[]][] {
     .map((t) => [t, grouped.get(t) as Command[]] as [CommandType, Command[]]);
 }
 
-export const CommandPalette = ({ open, onOpenChange, onClose }: CommandPaletteProps) => {
+export const CommandPalette = ({ open, onOpenChange }: CommandPaletteProps) => {
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  const commands = useCommands(onClose);
+  const close = useCallback(() => onOpenChange(false), [onOpenChange]);
+  const commands = useCommands(close);
   const filtered = useMemo(() => filterCommands(commands, query), [commands, query]);
   const grouped = useMemo(() => groupCommands(filtered), [filtered]);
 

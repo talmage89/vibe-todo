@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 export const useCommandPalette = () => {
   const [open, setOpen] = useState(false);
@@ -15,7 +15,5 @@ export const useCommandPalette = () => {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const close = useCallback(() => setOpen(false), []);
-
-  return { open, setOpen, close };
+  return { open, setOpen };
 };
