@@ -1,5 +1,6 @@
 import type { Elysia } from "elysia";
 import { projectRoutes } from "~/features/projects/routes";
+import { searchRoutes } from "~/features/search/routes";
 import { userRoutes } from "~/features/settings/routes";
 import { crossProjectTaskRoutes } from "~/features/tasks/cross-project-routes";
 import { subtaskRoutes } from "~/features/tasks/subtask-routes";
@@ -26,7 +27,8 @@ export const registerApiRoutes = (app: Elysia) => {
       .use(taskRoutes)
       .use(subtaskRoutes)
       .use(tagRoutes)
-      .use(crossProjectTaskRoutes),
+      .use(crossProjectTaskRoutes)
+      .use(searchRoutes),
   );
 
   return app;
