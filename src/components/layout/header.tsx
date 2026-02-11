@@ -24,9 +24,10 @@ import { isTheme, useTheme } from "~/platform/theme/use-theme";
 
 interface HeaderProps {
   onMenuClick: () => void;
+  onSearchClick: () => void;
 }
 
-export const Header = ({ onMenuClick }: HeaderProps) => {
+export const Header = ({ onMenuClick, onSearchClick }: HeaderProps) => {
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
 
@@ -49,8 +50,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
           <Bars3Icon className="h-5 w-5" />
         </Button>
 
-        {/* Search button - placeholder for future command palette */}
-        <Button variant="secondary" className="flex items-center gap-2">
+        <Button variant="secondary" className="flex items-center gap-2" onClick={onSearchClick}>
           <MagnifyingGlassIcon className="h-4 w-4" />
           <span className="hidden sm:inline">Search</span>
           <kbd className="hidden rounded bg-surface px-1.5 py-0.5 font-medium text-secondary text-xs sm:inline">
