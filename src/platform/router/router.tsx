@@ -11,6 +11,7 @@ import { Login } from "~/features/auth/components/login";
 import { InboxView } from "~/features/inbox/components/inbox-view";
 import { ProjectSettings } from "~/features/projects/components/project-settings";
 import { ProjectView } from "~/features/projects/components/project-view";
+import { SearchView } from "~/features/search/components/search-view";
 import { Settings } from "~/features/settings/components/settings";
 import { isSettingsSection, type SettingsSearch } from "~/features/settings/types";
 import { Tmp } from "~/features/tmp/index";
@@ -64,6 +65,18 @@ const UpcomingRoute = createRoute({
     <ProtectedRoute>
       <AppLayout>
         <UpcomingView />
+      </AppLayout>
+    </ProtectedRoute>
+  ),
+});
+
+const SearchRoute = createRoute({
+  getParentRoute: () => RootRoute,
+  path: "/search",
+  component: () => (
+    <ProtectedRoute>
+      <AppLayout>
+        <SearchView />
       </AppLayout>
     </ProtectedRoute>
   ),
@@ -125,6 +138,7 @@ export const routeTree = RootRoute.addChildren([
   LoginRoute,
   TodayRoute,
   UpcomingRoute,
+  SearchRoute,
   ProjectRoute,
   ProjectSettingsRoute,
   SettingsRoute,
