@@ -15,6 +15,7 @@ export const queryKeys = {
     today: ["tasks", "today"] as const,
     overdue: ["tasks", "overdue"] as const,
     upcoming: ["tasks", "upcoming"] as const,
+    search: (query: string) => ["tasks", "search", query] as const,
   },
   tags: {
     all: (projectId: string) => ["projects", projectId, "tags"] as const,
