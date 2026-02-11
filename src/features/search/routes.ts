@@ -5,14 +5,29 @@ import { type AuthUser, authMiddleware, requireAuth } from "~/platform/auth/midd
 import { TaskPriority, TaskStatus } from "~/platform/db/generated";
 import * as searchService from "./service";
 
-const searchQuerySchema = z.object({
-  q: z.string().min(1, "Search query is required"),
-  status: z.enum(TaskStatus).optional(),
-  priority: z.enum(TaskPriority).optional(),
-  projectId: z.string().optional(),
-  cursor: z.string().optional(),
-  limit: z.coerce.number().int().min(1).max(100).optional(),
-});
+const searchQuerySchema = z
+  .object({
+    q: z.string().optional().default(""),
+    status: z.enum(TaskStatus).optional(),
+    priority: z.enum(TaskPriority).optional(),
+    projectId: z.string().optional(),
+    projectName: z.string().optional(),
+    dateFilter: z.enum(["overdue", "today"] as const).optional(),
+    cursor: z.string().optional(),
+    limit: z.coerce.number().int().min(1).max(100).optional(),
+  })
+  .refine(
+    (data) =>
+      data.q ||
+      data.status ||
+      data.priority ||
+      data.projectId ||
+      data.projectName ||
+      data.dateFilter,
+    {
+      message: "At least one search parameter is required",
+    },
+  );
 
 type SearchHandlerProps = {
   user: AuthUser | undefined;

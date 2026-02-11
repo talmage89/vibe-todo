@@ -67,7 +67,7 @@ function getDescriptionSnippet(description: string | null, query: string): strin
 export const SearchView = () => {
   const [inputValue, setInputValue] = useState("");
   const [query, setQuery] = useState("");
-  const { tasks, loading, error, toggleStatus, updateTask } = useSearchTasks(query);
+  const { tasks, loading, error, toggleStatus, updateTask, textQuery } = useSearchTasks(query);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
@@ -133,7 +133,7 @@ export const SearchView = () => {
           value={inputValue}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
-          placeholder="Search tasks..."
+          placeholder="Search tasks... (try is:overdue, priority:high)"
           className="h-8 flex-1 border-none bg-transparent shadow-none focus-visible:ring-0"
           autoFocus
         />
@@ -178,7 +178,7 @@ export const SearchView = () => {
               <SearchProjectGroup
                 key={group.projectId}
                 group={group}
-                query={query}
+                query={textQuery}
                 onToggleStatus={toggleStatus}
                 onUpdateTask={updateTask}
                 onClickTask={handleClickTask}
