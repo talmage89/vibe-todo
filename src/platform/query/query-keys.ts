@@ -20,6 +20,10 @@ export const queryKeys = {
   tags: {
     all: (projectId: string) => ["projects", projectId, "tags"] as const,
   },
+  search: {
+    results: (query: string, filters?: Record<string, unknown>) =>
+      ["search", query, filters] as const,
+  },
   auth: {
     user: ["auth", "user"] as const,
   },
