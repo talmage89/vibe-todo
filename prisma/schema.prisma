@@ -72,12 +72,19 @@ model Account {
   @@map("accounts")
 }
 
+enum SessionSource {
+  WEB
+  CLI
+}
+
 model Session {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
 
-  token     String   @unique
+  token     String        @unique
   expiresAt DateTime
+  source    SessionSource @default(WEB)
+  label     String?
   userAgent String?
   ipAddress String?
 
