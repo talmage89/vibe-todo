@@ -1,11 +1,14 @@
 import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { z } from "zod/v4";
 
-export interface AuthConfig {
-  token: string;
-  server: string;
-}
+const authConfigSchema = z.object({
+  token: z.string(),
+  server: z.string(),
+});
+
+export type AuthConfig = z.infer<typeof authConfigSchema>;
 
 const APP_NAME = "todo";
 const AUTH_FILE = "auth.json";
@@ -21,17 +24,8 @@ export function loadAuth(): AuthConfig | null {
   if (!existsSync(filePath)) return null;
 
   const raw = readFileSync(filePath, "utf-8");
-  const parsed: unknown = JSON.parse(raw);
-  if (
-    typeof parsed !== "object" ||
-    parsed === null ||
-    typeof (parsed as AuthConfig).token !== "string" ||
-    typeof (parsed as AuthConfig).server !== "string"
-  ) {
-    return null;
-  }
-
-  return parsed as AuthConfig;
+  const result = authConfigSchema.safeParse(JSON.parse(raw));
+  return result.success ? result.data : null;
 }
 
 export function saveAuth(config: AuthConfig): void {
